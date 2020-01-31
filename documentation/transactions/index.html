@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Transactions | Cryptokernel</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-124597472-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-124597472-1');
+</script>
+
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+      <li><a href="/downloads/">Downloads</a></li>
+      
+      <li><a href="/documentation/">Documentation</a></li>
+      
+      <li><a href="https://github.com/mit-dci/cryptokernel">GitHub</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">Transactions</span></h1>
+
+
+</div>
+
+<main>
+<p>Similarly to a database, a <strong>transaction</strong> is a group of operations on funds that satisfies the <a href="https://en.wikipedia.org/wiki/ACID_(computer_science)">ACID</a> properties. The operations in a transaction will all occur or none will (atomicity), only transactions that are valid spends are allowed (consistency), blocks serialise transactions for concurrency control (isolation) and the consensus algorithm provides protection from transaction reversals (durability).</p>
+<p>The essential building blocks of a transaction are <strong>inputs</strong> and <strong>outputs</strong>. An output is a store of coins along with rules about how those coins can be spent as well as arbitrary data that can be included with the output. An input spends an output by providing whatever data is required to spend the output by the rules specified in the output. A transaction is a set of inputs spending existing unspent outputs and a set of new outputs that will be created if the transaction is included in the blockchain. The total value of the new outputs in a transaction is less than the total value of the outputs being spent by the inputs. The deficit between these two values is the fee that is charged for the transaction. Every transaction has at least one inputs except for coinbase transactions which are created as a part of blocks and are the means by which new coins are added to the system. Every input spends its output in its entirety so any coins that you do not want to be given away as a fee must be re-allocated as new outputs in the transaction.</p>
+<h2 id="your-first-transaction">Your first transaction</h2>
+<p>The remainder of this tutorial assumes you already have some K320 to use (or that you know how to bootstrap your own test coin). Check the <a href="/documentation/quickstart">quickstart guide</a> for details on how to mine K320 to use for testing. We are going to use <a href="https://www.python.org/downloads/">Python 3</a> to interface with Cryptokernel and build transactions. Make sure Python 3 is intalled on your system and that you have <code>ckd</code> configured and running before continuing.</p>
+<h3 id="communicating-with-ckd-via-json-rpc">Communicating with <code>ckd</code> via JSON-RPC</h3>
+<p>First we must get your Python code communicating with <code>ckd</code>. The prefered method for this is <a href="https://en.wikipedia.org/wiki/JSON-RPC#Version_2.0">JSON-RPC</a>. The RPC endpoint is password protected so we must write a Python function that is able to make an authenticated request to <code>ckd</code>. Check your <code>config.json</code> file and make a note of the <code>rpcuser</code> and <code>rpcpassword</code> fields as we will use these to connect to <code>ckd</code>.</p>
+<p>Then add to a Python script the following request function:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python"><span style="color:#008000;font-weight:bold">import</span> <span style="color:#00f;font-weight:bold">requests</span>
+<span style="color:#008000;font-weight:bold">import</span> <span style="color:#00f;font-weight:bold">json</span>
+<span style="color:#008000;font-weight:bold">import</span> <span style="color:#00f;font-weight:bold">base64</span>
+
+url <span style="color:#666">=</span> <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">http://localhost:8383</span><span style="color:#ba2121">&#34;</span>
+rpcuser <span style="color:#666">=</span> <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">ckrpc</span><span style="color:#ba2121">&#34;</span>
+rpcpassword <span style="color:#666">=</span> <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">password</span><span style="color:#ba2121">&#34;</span>
+
+<span style="color:#008000;font-weight:bold">def</span> <span style="color:#00f">request</span>(method, params):
+    unencoded_str <span style="color:#666">=</span> rpcuser <span style="color:#666">+</span> <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">:</span><span style="color:#ba2121">&#34;</span> <span style="color:#666">+</span> rpcpassword 
+    encoded_str <span style="color:#666">=</span> base64<span style="color:#666">.</span>b64encode(unencoded_str<span style="color:#666">.</span>encode())
+    headers <span style="color:#666">=</span> {
+        <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">content-type</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">application/json</span><span style="color:#ba2121">&#34;</span>,
+        <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">Authorization</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">Basic </span><span style="color:#ba2121">&#34;</span> <span style="color:#666">+</span> encoded_str<span style="color:#666">.</span>decode(<span style="color:#ba2121"></span><span style="color:#ba2121">&#39;</span><span style="color:#ba2121">utf-8</span><span style="color:#ba2121">&#39;</span>)}
+    payload <span style="color:#666">=</span> {
+        <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">method</span><span style="color:#ba2121">&#34;</span>: method,
+        <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">params</span><span style="color:#ba2121">&#34;</span>: params,
+        <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">jsonrpc</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">2.0</span><span style="color:#ba2121">&#34;</span>,
+        <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">id</span><span style="color:#ba2121">&#34;</span>: <span style="color:#666">0</span>,
+    }
+    response <span style="color:#666">=</span> requests<span style="color:#666">.</span>post(url, data<span style="color:#666">=</span>json<span style="color:#666">.</span>dumps(payload), headers<span style="color:#666">=</span>headers)<span style="color:#666">.</span>json()  
+    <span style="color:#008000;font-weight:bold">return</span> response
+</code></pre></div><p>Replace the <code>rpcuser</code> and <code>rpcpassword</code> variables with the values copied from your <code>config.json</code> file. If you are using a coin other than K320 you will need to change the <code>url</code> variable to reflect the port of the RPC endpoint for that coin.</p>
+<p>Now we can make a simple RPC call to <code>ckd</code>:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python"><span style="color:#666">.</span><span style="color:#666">.</span><span style="color:#666">.</span>
+res <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">getinfo</span><span style="color:#ba2121">&#34;</span>, {})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#008000;font-weight:bold">print</span>(res)
+</code></pre></div><div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ python3 run.py
+<span style="color:#666">{</span><span style="color:#ba2121">&#39;connections&#39;</span>: 5, <span style="color:#ba2121">&#39;balance&#39;</span>: <span style="color:#ba2121">&#39;4266.12331762&#39;</span>, <span style="color:#ba2121">&#39;mempool&#39;</span>: <span style="color:#666">{</span><span style="color:#ba2121">&#39;count&#39;</span>: 0, <span style="color:#ba2121">&#39;size&#39;</span>: <span style="color:#ba2121">&#39;0.000 MB&#39;</span><span style="color:#666">}</span>, <span style="color:#ba2121">&#39;height&#39;</span>: 209999, <span style="color:#ba2121">&#39;rpc_version&#39;</span>: <span style="color:#ba2121">&#39;0.0.2&#39;</span>, <span style="color:#ba2121">&#39;ck_version&#39;</span>: <span style="color:#ba2121">&#39;0.2.0-alpha-dev&#39;</span><span style="color:#666">}</span>
+</code></pre></div><h3 id="retrieving-unspent-outputs">Retrieving unspent outputs</h3>
+<p>Now that we can communicate with <code>ckd</code> we can build, sign and broadcast transactions. To retrieve a list of unspent outputs from the wallet that can be spent in our transaction we can use the <code>listunspentoutputs</code> RPC call. <code>listunspentoutputs</code> takes as parameters the name of the wallet account to retrieve outputs for and your wallet password.</p>
+<p>e.g.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python">params <span style="color:#666">=</span> {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">account</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">my_testing_account</span><span style="color:#ba2121">&#34;</span>, <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">password</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">mypassword</span><span style="color:#ba2121">&#34;</span>}
+
+res <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">listunspentoutputs</span><span style="color:#ba2121">&#34;</span>, params)[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#008000;font-weight:bold">print</span>(res)
+</code></pre></div><div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ python3 run.py
+<span style="color:#666">{</span><span style="color:#ba2121">&#39;outputs&#39;</span>: <span style="color:#666">[</span><span style="color:#666">{</span><span style="color:#ba2121">&#39;creationTx&#39;</span>: <span style="color:#ba2121">&#39;13fa025fff035176ca64ab3232e4ac138be14f5809f2e05f24d371af3602701a&#39;</span>, <span style="color:#ba2121">&#39;data&#39;</span>: <span style="color:#666">{</span><span style="color:#ba2121">&#39;publicKey&#39;</span>: <span style="color:#ba2121">&#39;BNhtisPytzKtucZww4lA5mxgZG1qrd4vOBx8DJ7niFX8it3Jub7V2WG7Tc7WAg/SuTDYA7OJ624kfkb83Yg3hT8=&#39;</span>, <span style="color:#ba2121">&#39;contract&#39;</span>: None<span style="color:#666">}</span>, <span style="color:#ba2121">&#39;value&#39;</span>: 7633425214, <span style="color:#ba2121">&#39;nonce&#39;</span>: 631800362, <span style="color:#ba2121">&#39;id&#39;</span>: <span style="color:#ba2121">&#39;4fb5e6cf18b547a79b4ff7b8e9b1237df1f3091d93a8b96aa601ef0926132a0&#39;</span><span style="color:#666">}</span>, <span style="color:#666">{</span><span style="color:#ba2121">&#39;creationTx&#39;</span>: <span style="color:#ba2121">&#39;9d4afb688205cf17debd29cfd1daf55ec3c8fa77cabd31dd1e63b357159818f1&#39;</span>, <span style="color:#ba2121">&#39;data&#39;</span>: <span style="color:#666">{</span><span style="color:#ba2121">&#39;publicKey&#39;</span>: <span style="color:#ba2121">&#39;BNhtisPytzKtucZww4lA5mxgZG1qrd4vOBx8DJ7niFX8it3Jub7V2WG7Tc7WAg/SuTDYA7OJ624kfkb83Yg3hT8=&#39;</span>, <span style="color:#ba2121">&#39;contract&#39;</span>: None<span style="color:#666">}</span>
+...
+</code></pre></div><h3 id="anatomy-of-an-output">Anatomy of an output</h3>
+<p>Let&rsquo;s take a look at one of these outputs and take a moment to understand what each of the fields mean.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python">params <span style="color:#666">=</span> {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">account</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">my_testing_account</span><span style="color:#ba2121">&#34;</span>, <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">password</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">mypassword</span><span style="color:#ba2121">&#34;</span>}
+
+res <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">listunspentoutputs</span><span style="color:#ba2121">&#34;</span>, params)[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#008000;font-weight:bold">print</span>(json<span style="color:#666">.</span>dumps(res[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputs</span><span style="color:#ba2121">&#34;</span>][<span style="color:#666">0</span>], sort_keys<span style="color:#666">=</span>True, indent<span style="color:#666">=</span><span style="color:#666">4</span>))
+</code></pre></div><div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ python3 run.py
+<span style="color:#666">{</span>
+    <span style="color:#ba2121">&#34;creationTx&#34;</span>: <span style="color:#ba2121">&#34;13fa025fff035176ca64ab3232e4ac138be14f5809f2e05f24d371af3602701a&#34;</span>,
+    <span style="color:#ba2121">&#34;data&#34;</span>: <span style="color:#666">{</span>
+        <span style="color:#ba2121">&#34;contract&#34;</span>: null,
+        <span style="color:#ba2121">&#34;publicKey&#34;</span>: <span style="color:#ba2121">&#34;BNhtisPytzKtucZww4lA5mxgZG1qrd4vOBx8DJ7niFX8it3Jub7V2WG7Tc7WAg/SuTDYA7OJ624kfkb83Yg3hT8=&#34;</span>
+    <span style="color:#666">}</span>,
+    <span style="color:#ba2121">&#34;id&#34;</span>: <span style="color:#ba2121">&#34;4fb5e6cf18b547a79b4ff7b8e9b1237df1f3091d93a8b96aa601ef0926132a0&#34;</span>,
+    <span style="color:#ba2121">&#34;nonce&#34;</span>: 631800362,
+    <span style="color:#ba2121">&#34;value&#34;</span>: <span style="color:#666">7633425214</span>
+<span style="color:#666">}</span>
+</code></pre></div><p>The output as displayed above is almost as it appears as part of the Cryptokernel protocol except for the <code>id</code> and <code>creationTx</code> fields which are added by the RPC call for our convenience and not actually stored as part of the output. The <code>id</code> field displays the unique identifier for the output. Each output get its own ID and duplicates are not allowed. The <code>creationTx</code> field displayed the ID of the transaction which first created the output. The <code>value</code> field is an integer representing the number of coins stored in this output. This is the maximum number of coins that can be created as new outputs in a transaction if this input is spent. The <code>data</code> field contains arbitrary JSON used to specify rules about how the output can be spent. In this case there is a <code>publicKey</code> specified meaning that the spending input must contain a valid signature for the given public key. The <code>nonce</code> field is there in case you need to create outputs that would otherwise have colliding IDs and has no semantic meaning beyond changing the output ID.</p>
+<p>We can use the <code>gettransaction</code> RPC call to retrieve the entire transaction including this output:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python">res <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">gettransaction</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">id</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">13fa025fff035176ca64ab3232e4ac138be14f5809f2e05f24d371af3602701a</span><span style="color:#ba2121">&#34;</span>})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#008000;font-weight:bold">print</span>(json<span style="color:#666">.</span>dumps(res, sort_keys<span style="color:#666">=</span>True, indent<span style="color:#666">=</span><span style="color:#666">4</span>))
+</code></pre></div><div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ python3 run.py
+<span style="color:#666">{</span>
+    <span style="color:#ba2121">&#34;outputs&#34;</span>: <span style="color:#666">[</span>
+        <span style="color:#666">{</span>
+            <span style="color:#ba2121">&#34;data&#34;</span>: <span style="color:#666">{</span>
+                <span style="color:#ba2121">&#34;contract&#34;</span>: null,
+                <span style="color:#ba2121">&#34;publicKey&#34;</span>: <span style="color:#ba2121">&#34;BNhtisPytzKtucZww4lA5mxgZG1qrd4vOBx8DJ7niFX8it3Jub7V2WG7Tc7WAg/SuTDYA7OJ624kfkb83Yg3hT8=&#34;</span>
+            <span style="color:#666">}</span>,
+            <span style="color:#ba2121">&#34;nonce&#34;</span>: 631800362,
+            <span style="color:#ba2121">&#34;value&#34;</span>: <span style="color:#666">7633425214</span>
+        <span style="color:#666">}</span>
+    <span style="color:#666">]</span>,
+    <span style="color:#ba2121">&#34;timestamp&#34;</span>: <span style="color:#666">1534331998</span>
+<span style="color:#666">}</span>
+</code></pre></div><p>Here we can see the transaction was a coinbase transaction because there are no inputs and thus these coins were created as part of block production. If you mined K320 to acquire coins for part of this tutorial it&rsquo;s likely your outputs will look similar to this one.</p>
+<h3 id="constructing-the-transaction">Constructing the transaction</h3>
+<p>We are going to create a transaction that will look very similar to one created by the <code>sendtoaddress</code> RPC call that&rsquo;s covered in the quickstart guide. The transaction will spend one of the outputs retrieved in the previous section and create a new output that can be spent with a signature for the public key we provide, exactly the same as in <code>sendtoaddress</code>. First you will need to create a new account in the <code>ckd</code> wallet to get a new public key to send the funds to. Check the quickstart guide if you are unsure how to do that.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python"><span style="color:#008000;font-weight:bold">import</span> <span style="color:#00f;font-weight:bold">time</span>
+<span style="color:#666">.</span><span style="color:#666">.</span><span style="color:#666">.</span>
+
+<span style="color:#666">.</span><span style="color:#666">.</span><span style="color:#666">.</span>
+params <span style="color:#666">=</span> {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">account</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">my_testing_account</span><span style="color:#ba2121">&#34;</span>, <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">password</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">mypassword</span><span style="color:#ba2121">&#34;</span>}
+
+<span style="color:#408080;font-style:italic"># retrieve an output to spend</span>
+toSpend <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">listunspentoutputs</span><span style="color:#ba2121">&#34;</span>, params)[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputs</span><span style="color:#ba2121">&#34;</span>][<span style="color:#666">0</span>]
+
+fee <span style="color:#666">=</span> <span style="color:#666">20000</span>
+publicKey <span style="color:#666">=</span> <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">BANyQ50v/jWXz4dKpeXclE21aTgDJhmIgCCNH7sxAzuZqfSx6im19iqZjWRHlbrWh2dQC++aixYT+60a+kq9+Rg=</span><span style="color:#ba2121">&#34;</span>
+
+<span style="color:#408080;font-style:italic"># input wrapper spending output</span>
+<span style="color:#008000">input</span> <span style="color:#666">=</span> {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputId</span><span style="color:#ba2121">&#34;</span>: toSpend[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">id</span><span style="color:#ba2121">&#34;</span>]}
+
+<span style="color:#408080;font-style:italic"># new output for spent funds (minus fee)</span>
+newOutput <span style="color:#666">=</span> {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">value</span><span style="color:#ba2121">&#34;</span>: toSpend[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">value</span><span style="color:#ba2121">&#34;</span>] <span style="color:#666">-</span> fee, 
+             <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">nonce</span><span style="color:#ba2121">&#34;</span>: <span style="color:#666">0</span>, 
+             <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>: {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">publicKey</span><span style="color:#ba2121">&#34;</span>: publicKey}}
+
+<span style="color:#408080;font-style:italic"># the unsigned transaction</span>
+transaction <span style="color:#666">=</span> {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">inputs</span><span style="color:#ba2121">&#34;</span>: [<span style="color:#008000">input</span>], <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputs</span><span style="color:#ba2121">&#34;</span>: [newOutput], <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">timestamp</span><span style="color:#ba2121">&#34;</span>: <span style="color:#008000">int</span>(time<span style="color:#666">.</span>time())}
+
+<span style="color:#008000;font-weight:bold">print</span>(json<span style="color:#666">.</span>dumps(transaction, sort_keys<span style="color:#666">=</span>True, indent<span style="color:#666">=</span><span style="color:#666">4</span>))
+</code></pre></div><div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ python3 run.py
+<span style="color:#666">{</span>
+    <span style="color:#ba2121">&#34;inputs&#34;</span>: <span style="color:#666">[</span>
+        <span style="color:#666">{</span>
+            <span style="color:#ba2121">&#34;outputId&#34;</span>: <span style="color:#ba2121">&#34;4fb5e6cf18b547a79b4ff7b8e9b1237df1f3091d93a8b96aa601ef0926132a0&#34;</span>
+        <span style="color:#666">}</span>
+    <span style="color:#666">]</span>,
+    <span style="color:#ba2121">&#34;outputs&#34;</span>: <span style="color:#666">[</span>
+        <span style="color:#666">{</span>
+            <span style="color:#ba2121">&#34;data&#34;</span>: <span style="color:#666">{</span>
+                <span style="color:#ba2121">&#34;publicKey&#34;</span>: <span style="color:#ba2121">&#34;BANyQ50v/jWXz4dKpeXclE21aTgDJhmIgCCNH7sxAzuZqfSx6im19iqZjWRHlbrWh2dQC++aixYT+60a+kq9+Rg=&#34;</span>
+            <span style="color:#666">}</span>,
+            <span style="color:#ba2121">&#34;nonce&#34;</span>: 0,
+            <span style="color:#ba2121">&#34;value&#34;</span>: <span style="color:#666">7633405214</span>
+        <span style="color:#666">}</span>
+    <span style="color:#666">]</span>,
+    <span style="color:#ba2121">&#34;timestamp&#34;</span>: <span style="color:#666">1534787996</span>
+<span style="color:#666">}</span>
+</code></pre></div><p>The above code retrieves an unspent output and constructs an input from it by referencing the output&rsquo;s ID in the <code>outputId</code> field. It then constructs a new output with the value of the output being spent minus a fee and the public key that is able to spend the new output. Finally it bundles the input and output into a transaction object and prints the result. The type of output we have created here is known as a pay-to-public-key output. The transaction is almost ready to send but it is missing a signature in the input which is required to spend the output.</p>
+<h3 id="signing-the-transaction">Signing the transaction</h3>
+<p><code>ckd</code> comes with a <code>signtransaction</code> RPC which understands how to sign inputs for outputs of the form used in this tutorial: where there is a <code>publicKey</code> field and no contract, and the private key for the public key is stored in the <code>ckd</code> wallet. This streamlines the process of signing common transactions as the use of additional cryptography libraries for Python is not required.</p>
+<p>To sign our transaction:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python"><span style="color:#666">.</span><span style="color:#666">.</span><span style="color:#666">.</span>
+signed <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">signtransaction</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">transaction</span><span style="color:#ba2121">&#34;</span>: transaction, <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">password</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">mypassword</span><span style="color:#ba2121">&#34;</span>})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#008000;font-weight:bold">print</span>(json<span style="color:#666">.</span>dumps(signed, sort_keys<span style="color:#666">=</span>True, indent<span style="color:#666">=</span><span style="color:#666">4</span>))
+</code></pre></div><div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ python3 run.py
+<span style="color:#666">{</span>
+    <span style="color:#ba2121">&#34;inputs&#34;</span>: <span style="color:#666">[</span>
+        <span style="color:#666">{</span>
+            <span style="color:#ba2121">&#34;data&#34;</span>: <span style="color:#666">{</span>
+                <span style="color:#ba2121">&#34;signature&#34;</span>: <span style="color:#ba2121">&#34;MEUCIQC4T2cNiKWTuBYfULu7GEcQdN//+PcS4W9Gm+H/yWd2CgIgW+HVDq9MZbBDjTx9F6UJZzVS877bBadJgfVrjFXLkm0=&#34;</span>
+            <span style="color:#666">}</span>,
+            <span style="color:#ba2121">&#34;outputId&#34;</span>: <span style="color:#ba2121">&#34;4fb5e6cf18b547a79b4ff7b8e9b1237df1f3091d93a8b96aa601ef0926132a0&#34;</span>
+        <span style="color:#666">}</span>
+    <span style="color:#666">]</span>,
+    <span style="color:#ba2121">&#34;outputs&#34;</span>: <span style="color:#666">[</span>
+        <span style="color:#666">{</span>
+            <span style="color:#ba2121">&#34;data&#34;</span>: <span style="color:#666">{</span>
+                <span style="color:#ba2121">&#34;contract&#34;</span>: null,
+                <span style="color:#ba2121">&#34;publicKey&#34;</span>: <span style="color:#ba2121">&#34;BANyQ50v/jWXz4dKpeXclE21aTgDJhmIgCCNH7sxAzuZqfSx6im19iqZjWRHlbrWh2dQC++aixYT+60a+kq9+Rg=&#34;</span>
+            <span style="color:#666">}</span>,
+            <span style="color:#ba2121">&#34;nonce&#34;</span>: 0,
+            <span style="color:#ba2121">&#34;value&#34;</span>: <span style="color:#666">7633405214</span>
+        <span style="color:#666">}</span>
+    <span style="color:#666">]</span>,
+    <span style="color:#ba2121">&#34;timestamp&#34;</span>: <span style="color:#666">1534791303</span>
+<span style="color:#666">}</span>
+</code></pre></div><p>The unsigned transaction from the previous section now has an additional <code>data</code> field in the input which contains the <code>signature</code> required to spend the given output. <code>ckd</code> analysed the transaction, found the corresponding private key for the public key in the output being spent, signed the transaction and inserted the signature.</p>
+<h3 id="broadcasting-the-transaction">Broadcasting the transaction</h3>
+<p>Now the transaction is complete and ready to be broadcast using the <code>sendrawtransaction</code> RPC.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python"><span style="color:#666">.</span><span style="color:#666">.</span><span style="color:#666">.</span>
+success <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">sendrawtransaction</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">transaction</span><span style="color:#ba2121">&#34;</span>: signed})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#008000;font-weight:bold">print</span>(success)
+</code></pre></div><p>If the transaction was accepted, checking <code>getinfo</code> should show a transaction in the memory pool of unconfirmed transactions:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ ./ckd getinfo
+<span style="color:#666">{</span>
+	<span style="color:#ba2121">&#34;balance&#34;</span> : <span style="color:#ba2121">&#34;4266.12331762&#34;</span>,
+	<span style="color:#ba2121">&#34;ck_version&#34;</span> : <span style="color:#ba2121">&#34;0.2.0-alpha-dev&#34;</span>,
+	<span style="color:#ba2121">&#34;connections&#34;</span> : 4,
+	<span style="color:#ba2121">&#34;height&#34;</span> : 210079,
+	<span style="color:#ba2121">&#34;mempool&#34;</span> : 
+	<span style="color:#666">{</span>
+		<span style="color:#ba2121">&#34;count&#34;</span> : 1,
+		<span style="color:#ba2121">&#34;size&#34;</span> : <span style="color:#ba2121">&#34;0.000 MB&#34;</span>
+	<span style="color:#666">}</span>,
+	<span style="color:#ba2121">&#34;rpc_version&#34;</span> : <span style="color:#ba2121">&#34;0.0.2&#34;</span>
+<span style="color:#666">}</span>
+</code></pre></div><p>Eventually, once the transaction is included in a block, the coins will appear as a balance in the account whose receiving address you used to create the new output:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ ./ckd account my_receiving_account
+Please enter your wallet passphrase: ********
+<span style="color:#666">{</span>
+	<span style="color:#ba2121">&#34;balance&#34;</span> : <span style="color:#ba2121">&#34;76.334052&#34;</span>,
+	<span style="color:#ba2121">&#34;keys&#34;</span> : 
+	<span style="color:#666">[</span>
+		<span style="color:#666">{</span>
+			<span style="color:#ba2121">&#34;privKey&#34;</span> : 
+			<span style="color:#666">{</span>
+				<span style="color:#ba2121">&#34;cipherText&#34;</span> : <span style="color:#ba2121">&#34;V3JamOeQdngOeZ1QaV5Vdndku1/kyCwLiY0CbEkZA23Q/eZBvI1xs1fy284Qb1su&#34;</span>,
+				<span style="color:#ba2121">&#34;iv&#34;</span> : <span style="color:#ba2121">&#34;/xo7J5HguwqdbqmrOzWwzA==&#34;</span>,
+				<span style="color:#ba2121">&#34;salt&#34;</span> : <span style="color:#ba2121">&#34;fRAeQvcFkgV5Vuz6F6cpWsQuvmMcmObypJAjQBnd0Bk=&#34;</span>
+			<span style="color:#666">}</span>,
+			<span style="color:#ba2121">&#34;pubKey&#34;</span> : <span style="color:#ba2121">&#34;BANyQ50v/jWXz4dKpeXclE21aTgDJhmIgCCNH7sxAzuZqfSx6im19iqZjWRHlbrWh2dQC++aixYT+60a+kq9+Rg=&#34;</span>
+		<span style="color:#666">}</span>
+	<span style="color:#666">]</span>,
+	<span style="color:#ba2121">&#34;name&#34;</span> : <span style="color:#ba2121">&#34;my_receiving_account&#34;</span>
+<span style="color:#666">}</span>
+</code></pre></div><h3 id="the-complete-code">The complete code</h3>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python"><span style="color:#008000;font-weight:bold">import</span> <span style="color:#00f;font-weight:bold">requests</span>
+<span style="color:#008000;font-weight:bold">import</span> <span style="color:#00f;font-weight:bold">json</span>
+<span style="color:#008000;font-weight:bold">import</span> <span style="color:#00f;font-weight:bold">base64</span>
+<span style="color:#008000;font-weight:bold">import</span> <span style="color:#00f;font-weight:bold">time</span>
+
+url <span style="color:#666">=</span> <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">http://localhost:8383</span><span style="color:#ba2121">&#34;</span>
+rpcuser <span style="color:#666">=</span> <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">ckrpc</span><span style="color:#ba2121">&#34;</span>
+rpcpassword <span style="color:#666">=</span> <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">ckpassword</span><span style="color:#ba2121">&#34;</span>
+walletpassword <span style="color:#666">=</span> <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">mypassword</span><span style="color:#ba2121">&#34;</span>
+walletaccount <span style="color:#666">=</span> <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">my_test_account</span><span style="color:#ba2121">&#34;</span>
+fee <span style="color:#666">=</span> <span style="color:#666">100000</span>
+publicKey <span style="color:#666">=</span> <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">BANyQ50v/jWXz4dKpeXclE21aTgDJhmIgCCNH7sxAzuZqfSx6im19iqZjWRHlbrWh2dQC++aixYT+60a+kq9+Rg=</span><span style="color:#ba2121">&#34;</span>
+
+<span style="color:#008000;font-weight:bold">def</span> <span style="color:#00f">request</span>(method, params):
+    unencoded_str <span style="color:#666">=</span> rpcuser <span style="color:#666">+</span> <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">:</span><span style="color:#ba2121">&#34;</span> <span style="color:#666">+</span> rpcpassword
+    encoded_str <span style="color:#666">=</span> base64<span style="color:#666">.</span>b64encode(unencoded_str<span style="color:#666">.</span>encode())
+    headers <span style="color:#666">=</span> {
+        <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">content-type</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">application/json</span><span style="color:#ba2121">&#34;</span>,
+        <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">Authorization</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">Basic </span><span style="color:#ba2121">&#34;</span> <span style="color:#666">+</span> encoded_str<span style="color:#666">.</span>decode(<span style="color:#ba2121"></span><span style="color:#ba2121">&#39;</span><span style="color:#ba2121">utf-8</span><span style="color:#ba2121">&#39;</span>)}
+    payload <span style="color:#666">=</span> {
+        <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">method</span><span style="color:#ba2121">&#34;</span>: method,
+        <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">params</span><span style="color:#ba2121">&#34;</span>: params,
+        <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">jsonrpc</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">2.0</span><span style="color:#ba2121">&#34;</span>,
+        <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">id</span><span style="color:#ba2121">&#34;</span>: <span style="color:#666">0</span>,
+    }
+    response <span style="color:#666">=</span> requests<span style="color:#666">.</span>post(url, data<span style="color:#666">=</span>json<span style="color:#666">.</span>dumps(payload), headers<span style="color:#666">=</span>headers)<span style="color:#666">.</span>json()
+    <span style="color:#008000;font-weight:bold">return</span> response
+
+<span style="color:#408080;font-style:italic"># retrieve an output to spend</span>
+toSpend <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">listunspentoutputs</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">password</span><span style="color:#ba2121">&#34;</span>: walletpassword, <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">account</span><span style="color:#ba2121">&#34;</span>: walletaccount})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputs</span><span style="color:#ba2121">&#34;</span>][<span style="color:#666">0</span>]
+
+<span style="color:#408080;font-style:italic"># input wrapper spending output</span>
+<span style="color:#008000">input</span> <span style="color:#666">=</span> {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputId</span><span style="color:#ba2121">&#34;</span>: toSpend[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">id</span><span style="color:#ba2121">&#34;</span>]}
+
+<span style="color:#408080;font-style:italic"># new output for spent funds (minus fee)</span>
+newOutput <span style="color:#666">=</span> {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">value</span><span style="color:#ba2121">&#34;</span>: toSpend[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">value</span><span style="color:#ba2121">&#34;</span>] <span style="color:#666">-</span> fee,
+             <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">nonce</span><span style="color:#ba2121">&#34;</span>: <span style="color:#666">0</span>,
+             <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>: {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">publicKey</span><span style="color:#ba2121">&#34;</span>: publicKey}}
+
+<span style="color:#408080;font-style:italic"># the unsigned transaction</span>
+transaction <span style="color:#666">=</span> {
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">inputs</span><span style="color:#ba2121">&#34;</span>: [<span style="color:#008000">input</span>], 
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputs</span><span style="color:#ba2121">&#34;</span>: [newOutput], 
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">timestamp</span><span style="color:#ba2121">&#34;</span>: <span style="color:#008000">int</span>(time<span style="color:#666">.</span>time()),
+}
+<span style="color:#008000;font-weight:bold">print</span>(json<span style="color:#666">.</span>dumps(transaction, sort_keys<span style="color:#666">=</span>True, indent<span style="color:#666">=</span><span style="color:#666">4</span>))
+
+<span style="color:#408080;font-style:italic"># have ckd sign the unsigned transaction for us</span>
+signed <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">signtransaction</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">transaction</span><span style="color:#ba2121">&#34;</span>: transaction, <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">password</span><span style="color:#ba2121">&#34;</span>: walletpassword})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#008000;font-weight:bold">print</span>(json<span style="color:#666">.</span>dumps(signed, sort_keys<span style="color:#666">=</span>True, indent<span style="color:#666">=</span><span style="color:#666">4</span>))
+
+<span style="color:#408080;font-style:italic"># broadcast the signed transaction on the network</span>
+success <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">sendrawtransaction</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">transaction</span><span style="color:#ba2121">&#34;</span>: signed})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#008000;font-weight:bold">print</span>(success)
+</code></pre></div><h2 id="other-output-types">Other output types</h2>
+<p>In the above section we created a pay-to-public-key output where a signature signed with the private key that belongs to the public key specified in the output is required to spent the output. There are currently two other output types supported by Cryptokernel: pay-to-anyone and pay-to-contract. The former allows you to create an output that can be spent by anyone without rules and the latter allows you to specify arbitrary rules for a valid spend.</p>
+<h3 id="pay-to-anyone">Pay-to-anyone</h3>
+<p>To create a pay-to-anyone output, merely omit both the <code>publicKey</code> and <code>contract</code> data fields from the output you create. The output can then be spent by an empty input with no additional data required.</p>
+<p>The <code>newOutput</code> variable from the previous section would become:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python"><span style="color:#408080;font-style:italic"># new output for spent funds (minus fee)</span>
+newOutput <span style="color:#666">=</span> {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">value</span><span style="color:#ba2121">&#34;</span>: toSpend[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">value</span><span style="color:#ba2121">&#34;</span>] <span style="color:#666">-</span> fee, 
+             <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">nonce</span><span style="color:#ba2121">&#34;</span>: <span style="color:#666">0</span>, 
+             <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>: {}}
+</code></pre></div><p>Since output IDs are not allowed to collide, if there already exists a pay-to-anyone output of the value you desire you will be unable to create the new output without setting the <code>nonce</code> to a value that generates a unique output ID.</p>
+<h3 id="pay-to-contract">Pay-to-contract</h3>
+<p>Pay-to-contract outputs are covered in detail in the <a href="/documentation/contracts">contracts</a> guide.</p>
+<h3 id="pay-to-schnorr-key">Pay-to-schnorr-key</h3>
+<p>Cryptokernel supports <a href="https://blockstream.com/2018/01/23/musig-key-aggregation-schnorr-signatures.html">MuSig Schnorr signatures</a> that allow you to have <code>O(1)</code> verifiable n-of-n multisig outputs and aggregate <code>n</code> schnorr outputs into a single signature. The <a href="https://github.com/mit-dci/CryptoKernel/blob/master/tests/BlockchainTests.cpp#L89">unit tests provide some examples</a> of these transactions but they require the use of lower level <a href="https://github.com/metalicjames/cschnorr">C functions</a> to generate the signatures so are still for advanced users. In the future we intend for Schnorr to replace ECDSA and pay-to-public-key entirely.</p>
+
+</main>
+
+  <footer>
+  
+  
+  <hr/>
+  <!-- raw HTML omitted -->
+  
+  </footer>
+  </body>
+</html>
+

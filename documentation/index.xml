@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Documentation on Cryptokernel</title>
+    <link>http://cryptokernel.org/documentation/</link>
+    <description>Recent content in Documentation on Cryptokernel</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    
+	<atom:link href="http://cryptokernel.org/documentation/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Coin Creation</title>
+      <link>http://cryptokernel.org/documentation/coincreation/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://cryptokernel.org/documentation/coincreation/</guid>
+      <description>In the quickstart guide we learned how to set up a new CryptoKernel environment, make a wallet, and mine K320. In this guide, we&amp;rsquo;ll learn how to make us of Cryptokernel&amp;rsquo;s multicoin functionality to bootstrap our own coin just by fiddling with a few config files, no C++ required.
+Genesis Block A genesis block is the first block of a new blockchain. Keep in mind that by creating this new coin, we will be creating an entirely new blockchain with an entirely different history than that of K320.</description>
+    </item>
+    
+    <item>
+      <title>Contracts</title>
+      <link>http://cryptokernel.org/documentation/contracts/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://cryptokernel.org/documentation/contracts/</guid>
+      <description>In the transactions overview guide we learned how to create and spend outputs that have been locked with a public key meaning they only require a valid signature to spend. Through Cryptokernel&amp;rsquo;s integration with Lua it is possible to specify practically arbitrary rules that define how an output can be spent called contracts or scripts. By orchestrating multiple contract scripts, transaction constructions and off-chain helper code together it is possible to create more complex applications that are sometimes referred to as dApps (decentralised applications).</description>
+    </item>
+    
+    <item>
+      <title>Issues</title>
+      <link>http://cryptokernel.org/documentation/issues/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://cryptokernel.org/documentation/issues/</guid>
+      <description>This is where common issues and solutions involved with CK will be listed.
+Errors on Compilation If you&amp;rsquo;re running on a fresh Linux installation, you may encounter some build errors when running make. The most encountered is:
+fatal error: lua.h, No such file or directory Fix:
+~/Cryptokernel $ sudo cp /usr/include/lua5.3/{lauxlib.h,luaconf.h,lua.hpp,lualib.h,lua.h} /usr/local/include/ Another error may come when make runs the test suite, as the lz4.so file cannot be found.
+Fix:</description>
+    </item>
+    
+    <item>
+      <title>Managing private keys</title>
+      <link>http://cryptokernel.org/documentation/privatekeys/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://cryptokernel.org/documentation/privatekeys/</guid>
+      <description>Using the importprivkey and dumpprivkeys functions in ckd it is possible to back up your raw private keys and import them into another ckd instance.
+Exporting private keys If you wanted to retrieve the private key for the account mining in your wallet you would write:
+~$ ./ckd dumpprivkeys mining Please enter your wallet passphrase: ******** { &amp;#34;BEe1rQmiLfyVKfXo36Qw4D5u9J603jRDwtdiDEl0cwUF7mJwpDf66Ui8mECxCTCfbZHeDh4ZTXFTQOyHO0a6v4w=&amp;#34; : &amp;#34;4V7unMJ3gwZ6gaRU1rL5hUfVnh13daE1yLcKC8CIXVY=&amp;#34; } The first value is the address (public key) and the second value is the private key.</description>
+    </item>
+    
+    <item>
+      <title>Quickstart</title>
+      <link>http://cryptokernel.org/documentation/quickstart/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://cryptokernel.org/documentation/quickstart/</guid>
+      <description>This quickstart guide will help you to run a Cryptokernel node with the reference coin K320. First we will download and install the Cryptokernel software, synchronise with the blockchain, create a new K320 receiving address and configure mining in order to acquire some coins. You can use these coins to further explore Cryptokernel.
+Download and install Visit the downloads page in order to download the latest Cryptokernel release for your platform.</description>
+    </item>
+    
+    <item>
+      <title>Transactions</title>
+      <link>http://cryptokernel.org/documentation/transactions/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://cryptokernel.org/documentation/transactions/</guid>
+      <description>Similarly to a database, a transaction is a group of operations on funds that satisfies the ACID properties. The operations in a transaction will all occur or none will (atomicity), only transactions that are valid spends are allowed (consistency), blocks serialise transactions for concurrency control (isolation) and the consensus algorithm provides protection from transaction reversals (durability).
+The essential building blocks of a transaction are inputs and outputs. An output is a store of coins along with rules about how those coins can be spent as well as arbitrary data that can be included with the output.</description>
+    </item>
+    
+  </channel>
+</rss>

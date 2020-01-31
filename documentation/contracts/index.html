@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Contracts | Cryptokernel</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-124597472-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-124597472-1');
+</script>
+
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+      <li><a href="/downloads/">Downloads</a></li>
+      
+      <li><a href="/documentation/">Documentation</a></li>
+      
+      <li><a href="https://github.com/mit-dci/cryptokernel">GitHub</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">Contracts</span></h1>
+
+
+</div>
+
+<main>
+<p>In the <a href="/documentation/transactions">transactions overview</a> guide we learned how to create and spend outputs that have been locked with a public key meaning they only require a valid signature to spend. Through Cryptokernel&rsquo;s integration with <a href="https://www.lua.org/">Lua</a> it is possible to specify practically arbitrary rules that define how an output can be spent called <strong>contracts</strong> or <strong>scripts</strong>. By orchestrating multiple contract scripts, transaction constructions and off-chain helper code together it is possible to create more complex applications that are sometimes referred to as <strong>dApps</strong> (decentralised applications). This allows you to embed much richer semantics into an existing Cryptokernel network without having to alter the core protocol.</p>
+<h2 id="hello-world-contract">Hello world contract</h2>
+<p>For our first contract we are going to require that the spender provides the pre-image to the SHA-256 hash <code>03675ac53ff9cd1535ccc7dfcdfa2c458c5218371f418dc136f2d19ac1fbe8a5</code> (which is the string &ldquo;Hello, World&rdquo;) in the data field of the spending input. You should already have a Python setup with RPC connection to your <code>ckd</code> instance which is covered in the <a href="/documentation/transactions">transactions guide</a>.</p>
+<p>A contract in Cryptokernel consists of a Lua script which is evaluated at the time of transaction verification. If the script returns <code>true</code> then the spend is considered valid. All other outcomes including returning any other value or reaching execution limits causes the spend to be invalid. The simplest contract imagineable then is:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Lua" data-lang="Lua"><span style="color:#008000;font-weight:bold">return</span> <span style="color:#008000;font-weight:bold">false</span>
+</code></pre></div><p>This contract would make the output permanently unspendable as the Lua script never returns true. Equally a script that returns any value other than <code>true</code> such as <code>&quot;hello&quot;</code> or <code>1</code> would be unspendable.</p>
+<p>In practice it is useful to access the fields of the transaction being verified as well as other aspects of the blockchain state. In our case we need to access the <code>data</code> field of the input that is trying to spend the output our contract enforces rules on in order to check the pre-image the spender has provided. The Lua environment provides a variable called <code>thisInput</code> which is a table representing the input that is currently being verified. Additionally we need the <code>sha256</code> function which is also provided in the Lua environment. The hello world contract would therefore look like this:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Lua" data-lang="Lua"><span style="color:#008000;font-weight:bold">return</span> sha256(thisInput[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">preimage</span><span style="color:#ba2121">&#34;</span>]) <span style="color:#666">==</span> <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">03675ac53ff9cd1535ccc7dfcdfa2c458c5218371f418dc136f2d19ac1fbe8a5</span><span style="color:#ba2121">&#34;</span>
+</code></pre></div><p>The code retrieves the value from the <code>preimage</code> field of the <code>data</code> field of the input, hashes it and compares it to the expected hash. If the actual hash and expected hash are equal then the contract returns <code>true</code> and the spend is considered valid.</p>
+<h3 id="a-nameon-chaina-testing-the-contract-on-chain"><!-- raw HTML omitted --><!-- raw HTML omitted --> Testing the contract on-chain</h3>
+<p>When included in an output a Lua script is stored as compressed bytecode rather than raw Lua source code. <code>ckd</code>'s RPC interface includes a <code>compilecontract</code> command that handles this conversion for us. Once we have the bytecode for the contract the next step is to include it in an output for us to spend in a later transaction by providing the pre-image to the hash we locked the funds with. We will need to use the <code>calculateoutputid</code> RPC to calculate the new output&rsquo;s ID so we can refer to it later when we spend it in an input. By augmenting the code from the <a href="/documentation/transactions">transactions guide</a> to include our contract in the new output instead of a public key we end up with the following code:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python"><span style="color:#666">.</span><span style="color:#666">.</span><span style="color:#666">.</span>
+contractCode <span style="color:#666">=</span> <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">return sha256(thisInput[</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">data</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">][</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">preimage</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">]) == </span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">03675ac53ff9cd1535ccc7dfcdfa2c458c5218371f418dc136f2d19ac1fbe8a5</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">&#34;</span>
+
+<span style="color:#408080;font-style:italic"># compile the contract source code</span>
+compiledCode <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">compilecontract</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">code</span><span style="color:#ba2121">&#34;</span>: contractCode})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+
+<span style="color:#408080;font-style:italic"># retrieve an output to spend</span>
+toSpend <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">listunspentoutputs</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">password</span><span style="color:#ba2121">&#34;</span>: walletpassword, <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">account</span><span style="color:#ba2121">&#34;</span>: walletaccount})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputs</span><span style="color:#ba2121">&#34;</span>][<span style="color:#666">0</span>]
+
+<span style="color:#408080;font-style:italic"># input wrapper spending output</span>
+<span style="color:#008000">input</span> <span style="color:#666">=</span> {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputId</span><span style="color:#ba2121">&#34;</span>: toSpend[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">id</span><span style="color:#ba2121">&#34;</span>]}
+
+<span style="color:#408080;font-style:italic"># new output for spent funds (minus fee), notice now includes a contract</span>
+<span style="color:#408080;font-style:italic"># rather than a publicKey</span>
+newOutput <span style="color:#666">=</span> {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">value</span><span style="color:#ba2121">&#34;</span>: toSpend[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">value</span><span style="color:#ba2121">&#34;</span>] <span style="color:#666">-</span> fee,
+             <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">nonce</span><span style="color:#ba2121">&#34;</span>: <span style="color:#666">0</span>,
+             <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>: {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">contract</span><span style="color:#ba2121">&#34;</span>: compiledCode}}
+
+<span style="color:#408080;font-style:italic"># find out the new output&#39;s ID so we can refer to it when</span>
+<span style="color:#408080;font-style:italic"># we try to spend it later</span>
+outputId <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">calculateoutputid</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">output</span><span style="color:#ba2121">&#34;</span>: newOutput})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#008000;font-weight:bold">print</span>(outputId)
+
+<span style="color:#408080;font-style:italic"># the unsigned transaction</span>
+transaction <span style="color:#666">=</span> {
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">inputs</span><span style="color:#ba2121">&#34;</span>: [<span style="color:#008000">input</span>], 
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputs</span><span style="color:#ba2121">&#34;</span>: [newOutput], 
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">timestamp</span><span style="color:#ba2121">&#34;</span>: <span style="color:#008000">int</span>(time<span style="color:#666">.</span>time()),
+}
+
+<span style="color:#408080;font-style:italic"># have ckd sign the unsigned transaction for us</span>
+signed <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">signtransaction</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">transaction</span><span style="color:#ba2121">&#34;</span>: transaction, <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">password</span><span style="color:#ba2121">&#34;</span>: walletpassword})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#008000;font-weight:bold">print</span>(json<span style="color:#666">.</span>dumps(signed, sort_keys<span style="color:#666">=</span>True, indent<span style="color:#666">=</span><span style="color:#666">4</span>))
+
+<span style="color:#408080;font-style:italic"># broadcast the signed transaction on the network</span>
+success <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">sendrawtransaction</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">transaction</span><span style="color:#ba2121">&#34;</span>: signed})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#008000;font-weight:bold">print</span>(success)
+</code></pre></div><p>The code is almost identical to the code in the <a href="/documentation/transactions">transactions guide</a> except for the additional RPC calls to compile the contract and calculate the new output&rsquo;s ID and the replacement of the <code>publicKey</code> field in the new output with a <code>contract</code> field. The presence of a <code>contract</code> field in an output takes precedence over a <code>publicKey</code>, so if both are present in an output the contract is executed to check for spend validity rather than the signature for the public key being checked.</p>
+<p>The output from running the script should look similar to this:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ python3 run.py
+df273ca616af3e28bfdcdf769c284a2951d5c73fa0bdee71aab5a1cf4d952c89
+<span style="color:#666">{</span>
+    <span style="color:#ba2121">&#34;inputs&#34;</span>: <span style="color:#666">[</span>
+        <span style="color:#666">{</span>
+            <span style="color:#ba2121">&#34;data&#34;</span>: <span style="color:#666">{</span>
+                <span style="color:#ba2121">&#34;signature&#34;</span>: <span style="color:#ba2121">&#34;MEUCIDISim15zQtivKV+KMID8XKW8rJ5CUopDZ348Y77XhHKAiEA6186OrVmFDLuITMoJSd3g0a+2OV4tGqbGgZLz6z0dww=&#34;</span>
+            <span style="color:#666">}</span>,
+            <span style="color:#ba2121">&#34;outputId&#34;</span>: <span style="color:#ba2121">&#34;180f35bb70a3a590e64370c3f8b955088e2fba3980179ae614539000b3594649&#34;</span>
+        <span style="color:#666">}</span>
+    <span style="color:#666">]</span>,
+    <span style="color:#ba2121">&#34;outputs&#34;</span>: <span style="color:#666">[</span>
+        <span style="color:#666">{</span>
+            <span style="color:#ba2121">&#34;data&#34;</span>: <span style="color:#666">{</span>
+                <span style="color:#ba2121">&#34;contract&#34;</span>: <span style="color:#ba2121">&#34;BCJNGGBAgv8AAAD2BRtMdWFTABmTDQoaCgQIBAgIeFYAAQD1aCh3QAFzcmV0dXJuIHNoYTI1Nih0aGlzSW5wdXRbImRhdGEiXVsicHJlaW1hZ2UiXSkgPT0gIjAzNjc1YWM1M2ZmOWNkMTUzNWNjYzdkZmNkZmEyYzQ1OGM1MjE4MzcxZjQxOGRjMTM2ZjJkMTlhYzFmYmU4YTUigADyKQECCwAAAAYAQABGQEAAR4DAAEfAwAAkgAABXwBBAB4AAIADQAAAAwCAACYAAAEmAIAABQAAAAQHrAAlBAqtACAEBa0AJAQJqwAvFEGlAC0QAZ8AAaUAEwsKAA8EABUB2QCAAAAABV9FTlYAAAAA&#34;</span>
+            <span style="color:#666">}</span>,
+            <span style="color:#ba2121">&#34;nonce&#34;</span>: 0,
+            <span style="color:#ba2121">&#34;value&#34;</span>: <span style="color:#666">7633474894</span>
+        <span style="color:#666">}</span>
+    <span style="color:#666">]</span>,
+    <span style="color:#ba2121">&#34;timestamp&#34;</span>: <span style="color:#666">1534885886</span>
+<span style="color:#666">}</span>
+True
+</code></pre></div><p>Once the transaction has been included in a block we can spend our newly created output by referencing its ID that was printed as part of the previous code block and include the pre-image <code>Hello, World</code> in the data field of the input.</p>
+<p>e.g.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python"><span style="color:#666">.</span><span style="color:#666">.</span><span style="color:#666">.</span>
+<span style="color:#408080;font-style:italic"># spend the output we created. Fill in the outputId</span>
+<span style="color:#408080;font-style:italic"># with the actual ID from the previous step</span>
+<span style="color:#008000">input</span> <span style="color:#666">=</span> {
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputId</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">~new_output_id_from_last_step~</span><span style="color:#ba2121">&#34;</span>,
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>: {
+        <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">preimage</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">Hello, World</span><span style="color:#ba2121">&#34;</span>,
+    },
+}
+
+<span style="color:#408080;font-style:italic"># any arbitrary output to send the funds to. </span>
+<span style="color:#408080;font-style:italic"># Replace the value with the desired amount that&#39;s</span>
+<span style="color:#408080;font-style:italic"># less than the input value</span>
+newOutput <span style="color:#666">=</span> {
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">value</span><span style="color:#ba2121">&#34;</span>: <span style="color:#666">~</span>value_of_output_minus_fee<span style="color:#666">~</span>,
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">nonce</span><span style="color:#ba2121">&#34;</span>: <span style="color:#666">0</span>,
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>: {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">publicKey</span><span style="color:#ba2121">&#34;</span>: publicKey},
+}
+
+transaction <span style="color:#666">=</span> {
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">inputs</span><span style="color:#ba2121">&#34;</span>: [<span style="color:#008000">input</span>], 
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputs</span><span style="color:#ba2121">&#34;</span>: [newOutput], 
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">timestamp</span><span style="color:#ba2121">&#34;</span>: <span style="color:#008000">int</span>(time<span style="color:#666">.</span>time()),
+}
+<span style="color:#008000;font-weight:bold">print</span>(json<span style="color:#666">.</span>dumps(transaction, sort_keys<span style="color:#666">=</span>True, indent<span style="color:#666">=</span><span style="color:#666">4</span>))
+
+<span style="color:#408080;font-style:italic"># broadcast the transaction on the network</span>
+success <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">sendrawtransaction</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">transaction</span><span style="color:#ba2121">&#34;</span>: transaction})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#008000;font-weight:bold">print</span>(success)
+</code></pre></div><p>Note that we did not need to sign the transaction by calling <code>signtransaction</code> because the output we are spending is not locked with a public key. The output of the above code should be of the following form:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ python3 run.py
+<span style="color:#666">{</span>
+    <span style="color:#ba2121">&#34;inputs&#34;</span>: <span style="color:#666">[</span>
+        <span style="color:#666">{</span>
+            <span style="color:#ba2121">&#34;data&#34;</span>: <span style="color:#666">{</span>
+                <span style="color:#ba2121">&#34;preimage&#34;</span>: <span style="color:#ba2121">&#34;Hello, World&#34;</span>
+            <span style="color:#666">}</span>,
+            <span style="color:#ba2121">&#34;outputId&#34;</span>: <span style="color:#ba2121">&#34;df273ca616af3e28bfdcdf769c284a2951d5c73fa0bdee71aab5a1cf4d952c89&#34;</span>
+        <span style="color:#666">}</span>
+    <span style="color:#666">]</span>,
+    <span style="color:#ba2121">&#34;outputs&#34;</span>: <span style="color:#666">[</span>
+        <span style="color:#666">{</span>
+            <span style="color:#ba2121">&#34;data&#34;</span>: <span style="color:#666">{</span>
+                <span style="color:#ba2121">&#34;publicKey&#34;</span>: <span style="color:#ba2121">&#34;BNhtisPytzKtucZww4lA5mxgZG1qrd4vOBx8DJ7niFX8it3Jub7V2WG7Tc7WAg/SuTDYA7OJ624kfkb83Yg3hT8=&#34;</span>
+            <span style="color:#666">}</span>,
+            <span style="color:#ba2121">&#34;nonce&#34;</span>: 0,
+            <span style="color:#ba2121">&#34;value&#34;</span>: <span style="color:#666">7632996472</span>
+        <span style="color:#666">}</span>
+    <span style="color:#666">]</span>,
+    <span style="color:#ba2121">&#34;timestamp&#34;</span>: <span style="color:#666">1534886485</span>
+<span style="color:#666">}</span>
+True
+</code></pre></div><h2 id="a-namepay-to-public-keya-replicating-pay-to-public-key"><!-- raw HTML omitted --><!-- raw HTML omitted --> Replicating pay-to-public-key</h2>
+<p>In this section we will replicate the semantics of a regular pay-to-public-key output using a contract. This is useful to demonstrate the cryptography functions of the scripting language and the algorithm to safely verify signatures. Signature verification is an important building block for more advanced contracts as it allows you to authenticate users.</p>
+<p>In our script we must first retrieve the output being spent so we can read the public key defined there. Then we create an instance of the <code>Crypto</code> class accessible from the Lua environment, set the public key of the <code>Crypto</code> instance to the one defined in the output being spent and then verify the signature provided in the spending input. The payload being signed is the output ID being spent concatenated with the merkle root of the set of new output IDs in the transaction. A commitment to the new output IDs is required to ensure the signature cannot be replayed for a transaction with a different set of outputs that you have not approved.</p>
+<p>The resulting contract source code is as follows:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lua" data-lang="lua"><span style="color:#408080;font-style:italic">-- retrieve the output this input is spending</span>
+<span style="color:#008000;font-weight:bold">local</span> output <span style="color:#666">=</span> Blockchain.getOutput(thisInput[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputId</span><span style="color:#ba2121">&#34;</span>])
+
+<span style="color:#408080;font-style:italic">-- create a new instance of the Crypto class</span>
+<span style="color:#008000;font-weight:bold">local</span> crypto <span style="color:#666">=</span> Crypto.new()
+
+<span style="color:#408080;font-style:italic">-- set the public key of the class instance to the public key</span>
+<span style="color:#408080;font-style:italic">-- specified in the output being spent</span>
+crypto:setPublicKey(output[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">publicKey</span><span style="color:#ba2121">&#34;</span>])
+
+<span style="color:#408080;font-style:italic">-- return true if the given signature is valid</span>
+<span style="color:#008000;font-weight:bold">return</span> crypto:verify(thisInput[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputId</span><span style="color:#ba2121">&#34;</span>] <span style="color:#666">..</span> outputSetId, thisInput[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">signature</span><span style="color:#ba2121">&#34;</span>])
+</code></pre></div><p>Using the Python code from the <a href="#on-chain">previous section</a> and changing the <code>contractCode</code> variable to the contract source code above you can create an output with this contract which can be spent as if it were a regular pay-to-public-key output without a contract.</p>
+<h2 id="m-of-n-multisig">m-of-n multisig</h2>
+<p>Multi-signature outputs require a subset of multiple entities to approve a transaction for it to be considered valid. &ldquo;m-of-n&rdquo; means there are up to <code>n</code> signers and at least <code>m</code> of them are required for a valid spend. A 2-of-3 multisig output then requires two out of three potential signers to sign. Since Lua supports loops the contract code is mostly a repitition of the <a href="#pay-to-public-key">pay-to-public-key contract</a>;</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Lua" data-lang="Lua"><span style="color:#408080;font-style:italic">-- retrieve the output this input is spending</span>
+<span style="color:#008000;font-weight:bold">local</span> output <span style="color:#666">=</span> Blockchain.getOutput(thisInput[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputId</span><span style="color:#ba2121">&#34;</span>])
+
+<span style="color:#408080;font-style:italic">-- create a new instance of the Crypto class</span>
+<span style="color:#008000;font-weight:bold">local</span> crypto <span style="color:#666">=</span> Crypto.new()
+
+<span style="color:#008000;font-weight:bold">local</span> nSigs <span style="color:#666">=</span> <span style="color:#666">0</span>
+
+<span style="color:#408080;font-style:italic">-- iterate over each possible signer to check if they signed</span>
+<span style="color:#008000;font-weight:bold">for</span> i, pk <span style="color:#008000;font-weight:bold">in</span> ipairs(output[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">publicKeys</span><span style="color:#ba2121">&#34;</span>]) <span style="color:#008000;font-weight:bold">do</span> 
+
+    <span style="color:#408080;font-style:italic">-- is there a signature in the input signatures table for this public key?</span>
+    <span style="color:#008000;font-weight:bold">local</span> signature <span style="color:#666">=</span> thisInput[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">signatures</span><span style="color:#ba2121">&#34;</span>][tostring(i)]
+    <span style="color:#008000;font-weight:bold">if</span> signature <span style="color:#666">~=</span> <span style="color:#008000;font-weight:bold">nil</span> <span style="color:#008000;font-weight:bold">then</span> 
+        crypto:setPublicKey(pk)
+        <span style="color:#008000;font-weight:bold">if</span> crypto:verify(thisInput[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputId</span><span style="color:#ba2121">&#34;</span>] <span style="color:#666">..</span> outputSetId, signature) <span style="color:#666">~=</span> <span style="color:#008000;font-weight:bold">true</span> <span style="color:#008000;font-weight:bold">then</span>
+            <span style="color:#008000;font-weight:bold">return</span> <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">Invalid signature</span><span style="color:#ba2121">&#34;</span>
+        <span style="color:#008000;font-weight:bold">end</span>
+
+        nSigs <span style="color:#666">=</span> nSigs <span style="color:#666">+</span> <span style="color:#666">1</span>
+    <span style="color:#008000;font-weight:bold">end</span>
+<span style="color:#008000;font-weight:bold">end</span>
+
+<span style="color:#008000;font-weight:bold">return</span> nSigs <span style="color:#666">&gt;=</span> output[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">m</span><span style="color:#ba2121">&#34;</span>]
+</code></pre></div><p>As well as the compiled contract, the multisig output we create needs two additional fields: an array of public keys which enumerates the set of possible signers (called <code>publicKeys</code> in the above script) and a number to specify the amount of signatures required for a valid spend (called <code>m</code> in the above script). In order to spend the output, the input must contain a <code>signatures</code> map in its data field where they keys are the index of the public key being signed for in the <code>publicKeys</code> array of the output and the values are the signatures themselves.</p>
+<p>Example 2-of-3 multisig output:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Json" data-lang="Json">{
+    <span style="color:#008000;font-weight:bold">&#34;data&#34;</span>: {
+        <span style="color:#008000;font-weight:bold">&#34;m&#34;</span>: <span style="color:#666">2</span>,
+        <span style="color:#008000;font-weight:bold">&#34;publicKeys&#34;</span>: [<span style="color:#ba2121">&#34;BEzg0/o/kQ7vRSuEKi9bN+69wEEhRulchB5dDp8qeDr0x3qZVTerPQXpb1J8v0rp4kpccx2fY/UICziijjV31XU=&#34;</span>,
+                       <span style="color:#ba2121">&#34;BC07/bUj/6IicuGCjgkg+QW8Ny/AXn4xqEkBguG21h9vkjpJsfoNM1qNlK/uHxZ3cJWpt3TSjWmcFNO5uwD85bU=&#34;</span>,
+                       <span style="color:#ba2121">&#34;BBSMn/8D0KXwRvJNEL+rxMXX54vaN/J1pv/Hs/klMIJeyJ9Z7/LkPM1WkJ6tXO7sSDzbg0fksLGJKDAopCzzU4Q=&#34;</span>],
+        <span style="color:#008000;font-weight:bold">&#34;contract&#34;</span>: <span style="color:#ba2121">&#34;BCJNGGBAgvkCAAD2BRtMdWFTABmTDQoaCgQIBAgIeFYAAQByKHdAAf+4AQ0A8Q9sb2NhbCBvdXRwdXQgPSBCbG9ja2NoYWluLmdldE8XAMIodGhpc0lucHV0WyIpAGJJZCJdKSA7AKFjcnlwdG8gPSBDCQBULm5ldygcAPIPblNpZ3MgPSAwIGZvciBpLCBwayBpbiBpcGFpcnMoTADwBVsiZGF0YSJdWyJwdWJsaWNLZXlzXgAjZG9FAMdzaWduYXR1cmUgPSCKAAQ2AAUfAPcEcyJdW3Rvc3RyaW5nKGkpXSBpZjwAs349IG5pbCB0aGVuswBUOnNldFBzAEAocGspMQADGwBvdmVyaWZ5+QADMyAuLjABZlNldElkLGUAEClmAEJ0cnVlZwD2AHJldHVybiAiSW52YWxpZCgAVSIgZW5kHQECCAAxKyAxFgAABAADOQACGQA8Pj0gKQE1bSJdzQH2vQENMAAAAAYAQAAHQEAARoBAAEfAwAAkgAABRgBBAEdAwQBkgIAAgYABAMbAQQAHAUIAB0FCAuQAAQEewAWABoJAAAcCQgQHgkIERsJCAIACAANkggABB0ICBF8AQwQegAOATELDAMACgANkQoABTILDAMaCQADHwsAFBsNDAN0CgwUAAwAEZIIAAl8AxAQeQACAQUIEAGYCAAGNgEQB6YAAAGpB+X/HAEIAx8DEAWGAgAEeAACAw0AAAMMAgADmAAABJgCAABQAAAAEC30CJQQKfgIlBAqGASQECYYBIgQHbgJkBARuZXcTDAEiBAdaAiAEBSoBJgQLUQImBAsnAiQECSYCOAAEDQQCIgQH9wEnBAzfAU0BAQQSwQEkEwFyACACbQsAAg8AEzAKAA8EAKlSCQAAAAf/ABMF0wASBxQDEwgPABEGlwITCQ4AIBAo2gOwZ2VuZXJhdG9yKQ1gBEEAAAAMGABVc3RhdGUUABEOFAB1Y29udHJvbBYA1AJpDgAAACYAAAADcGsLABUKawETFRIAkAEAAAAFX0VOVgAAAAA=&#34;</span>
+    },
+    <span style="color:#008000;font-weight:bold">&#34;nonce&#34;</span>: <span style="color:#666">0</span>,
+    <span style="color:#008000;font-weight:bold">&#34;value&#34;</span>: <span style="color:#666">500000</span>
+}
+</code></pre></div><p>Example generation code:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python"><span style="color:#666">.</span><span style="color:#666">.</span><span style="color:#666">.</span>
+contractCode <span style="color:#666">=</span> <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">local output = Blockchain.getOutput(thisInput[</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">outputId</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">]) local crypto = Crypto.new() local nSigs = 0 for i, pk in ipairs(output[</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">data</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">][</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">publicKeys</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">]) do local signature = thisInput[</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">data</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">][</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">signatures</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">][tostring(i)] if signature ~= nil then crypto:setPublicKey(pk) if crypto:verify(thisInput[</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">outputId</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">] .. outputSetId, signature) ~= true then return </span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">Invalid signature</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121"> end nSigs = nSigs + 1 end end return nSigs &gt;= output[</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">data</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">][</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">m</span><span style="color:#b62;font-weight:bold">\&#34;</span><span style="color:#ba2121">]</span><span style="color:#ba2121">&#34;</span>
+
+<span style="color:#408080;font-style:italic"># set of public keys that can sign</span>
+multisigKeys <span style="color:#666">=</span> [<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">BBSMn/8D0KXwRvJNEL+rxMXX54vaN/J1pv/Hs/klMIJeyJ9Z7/LkPM1WkJ6tXO7sSDzbg0fksLGJKDAopCzzU4Q=</span><span style="color:#ba2121">&#34;</span>,
+                <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">BC07/bUj/6IicuGCjgkg+QW8Ny/AXn4xqEkBguG21h9vkjpJsfoNM1qNlK/uHxZ3cJWpt3TSjWmcFNO5uwD85bU=</span><span style="color:#ba2121">&#34;</span>,
+                <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">BEzg0/o/kQ7vRSuEKi9bN+69wEEhRulchB5dDp8qeDr0x3qZVTerPQXpb1J8v0rp4kpccx2fY/UICziijjV31XU=</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#408080;font-style:italic"># the number of keys required to sign for a valid spend</span>
+m <span style="color:#666">=</span> <span style="color:#666">2</span>
+
+<span style="color:#408080;font-style:italic"># compile the contract source code</span>
+compiledCode <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">compilecontract</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">code</span><span style="color:#ba2121">&#34;</span>: contractCode})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#408080;font-style:italic">#print(compiledCode)</span>
+
+<span style="color:#408080;font-style:italic"># retrieve an output to spend</span>
+toSpend <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">listunspentoutputs</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">password</span><span style="color:#ba2121">&#34;</span>: walletpassword, <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">account</span><span style="color:#ba2121">&#34;</span>: walletaccount})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputs</span><span style="color:#ba2121">&#34;</span>][<span style="color:#666">0</span>]
+
+<span style="color:#408080;font-style:italic"># input wrapper spending output</span>
+<span style="color:#008000">input</span> <span style="color:#666">=</span> {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputId</span><span style="color:#ba2121">&#34;</span>: toSpend[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">id</span><span style="color:#ba2121">&#34;</span>]}
+
+<span style="color:#408080;font-style:italic"># new output for spent funds (minus fee), notice now includes a contract</span>
+<span style="color:#408080;font-style:italic"># rather than a publicKey</span>
+newOutput <span style="color:#666">=</span> {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">value</span><span style="color:#ba2121">&#34;</span>: toSpend[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">value</span><span style="color:#ba2121">&#34;</span>] <span style="color:#666">-</span> fee,
+             <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">nonce</span><span style="color:#ba2121">&#34;</span>: <span style="color:#666">0</span>,
+             <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>: {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">contract</span><span style="color:#ba2121">&#34;</span>: compiledCode,
+                      <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">publicKeys</span><span style="color:#ba2121">&#34;</span>: multisigKeys,
+                       <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">m</span><span style="color:#ba2121">&#34;</span>: m}}
+
+<span style="color:#408080;font-style:italic"># calculate and print output ID so we can reference it later</span>
+outputId <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">calculateoutputid</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">output</span><span style="color:#ba2121">&#34;</span>: newOutput})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#008000;font-weight:bold">print</span>(outputId)
+
+<span style="color:#408080;font-style:italic"># the unsigned transaction</span>
+transaction <span style="color:#666">=</span> {
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">inputs</span><span style="color:#ba2121">&#34;</span>: [<span style="color:#008000">input</span>], 
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputs</span><span style="color:#ba2121">&#34;</span>: [newOutput], 
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">timestamp</span><span style="color:#ba2121">&#34;</span>: <span style="color:#008000">int</span>(time<span style="color:#666">.</span>time()),
+}
+
+<span style="color:#408080;font-style:italic"># have ckd sign the unsigned transaction for us</span>
+signed <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">signtransaction</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">transaction</span><span style="color:#ba2121">&#34;</span>: transaction, <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">password</span><span style="color:#ba2121">&#34;</span>: walletpassword})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#008000;font-weight:bold">print</span>(json<span style="color:#666">.</span>dumps(signed, sort_keys<span style="color:#666">=</span>True, indent<span style="color:#666">=</span><span style="color:#666">4</span>))
+
+<span style="color:#408080;font-style:italic"># broadcast the signed transaction on the network</span>
+success <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">sendrawtransaction</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">transaction</span><span style="color:#ba2121">&#34;</span>: signed})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#008000;font-weight:bold">print</span>(success)
+</code></pre></div><h3 id="signing-the-output">Signing the output</h3>
+<p>Unfortunately the <code>signtransaction</code> RPC that we&rsquo;ve used in previous sections does not know how to interpret our custom output format so we have to sign the output manually in order to spend it. To sign the output we will be using the <code>getoutputsetid</code> RPC which calculates the merkle root of a set of outputs which we use to create the message to sign, and the <code>signmessage</code> RPC which signs a given message with a given public key that the <code>ckd</code> wallet has the private key for.</p>
+<p>Example signing code:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Python" data-lang="Python"><span style="color:#666">.</span><span style="color:#666">.</span><span style="color:#666">.</span>
+<span style="color:#408080;font-style:italic"># the output ID of the multisig output created in the last step</span>
+outputId <span style="color:#666">=</span> <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">b352a38d2846a3aed7d0a38630a175e64c07ef9a51d4ebbe0a17b45307e734f2</span><span style="color:#ba2121">&#34;</span>
+
+<span style="color:#408080;font-style:italic"># any arbitrary output to send the funds to. </span>
+<span style="color:#408080;font-style:italic"># Replace the value with the desired amount that&#39;s</span>
+<span style="color:#408080;font-style:italic"># less than the input value</span>
+newOutput <span style="color:#666">=</span> {
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">value</span><span style="color:#ba2121">&#34;</span>: <span style="color:#666">~</span>value_of_output_minus_fee<span style="color:#666">~</span>,
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">nonce</span><span style="color:#ba2121">&#34;</span>: <span style="color:#666">0</span>,
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>: {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">publicKey</span><span style="color:#ba2121">&#34;</span>: <span style="color:#666">~</span>destination_pubkey<span style="color:#666">~</span>},
+}
+
+<span style="color:#408080;font-style:italic"># caclulate the output set merkle root to sign the multisig input</span>
+outputSetId <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">getoutputsetid</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputs</span><span style="color:#ba2121">&#34;</span>: [newOutput]})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+
+<span style="color:#408080;font-style:italic"># spend the output we created. Fill in the outputId</span>
+<span style="color:#408080;font-style:italic"># with the actual ID from the previous step</span>
+<span style="color:#008000">input</span> <span style="color:#666">=</span> {
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputId</span><span style="color:#ba2121">&#34;</span>: outputId,
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>: {
+        <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">signatures</span><span style="color:#ba2121">&#34;</span>: {} <span style="color:#408080;font-style:italic"># empty signatures map</span>
+    },
+}
+
+<span style="color:#408080;font-style:italic"># generate m signatures (just the first m in the multisigKeys array as an example)</span>
+<span style="color:#008000;font-weight:bold">for</span> i <span style="color:#a2f;font-weight:bold">in</span> <span style="color:#008000">range</span>(m):
+    <span style="color:#408080;font-style:italic"># we sign the output ID being spent concatenated with the new output set merkle root </span>
+    signature <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">signmessage</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">message</span><span style="color:#ba2121">&#34;</span>: outputId <span style="color:#666">+</span> outputSetId, 
+                                        <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">publickey</span><span style="color:#ba2121">&#34;</span>: multisigKeys[i], 
+                                        <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">password</span><span style="color:#ba2121">&#34;</span>: walletpassword})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+    
+    <span style="color:#408080;font-style:italic"># add the signature to the signatures map in the input</span>
+    <span style="color:#408080;font-style:italic"># note: Lua arrays start at 1 so we must add 1 to the </span>
+    <span style="color:#408080;font-style:italic"># index to reference the correct public key</span>
+    <span style="color:#008000">input</span>[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">signatures</span><span style="color:#ba2121">&#34;</span>][<span style="color:#008000">str</span>(i<span style="color:#666">+</span><span style="color:#666">1</span>)] <span style="color:#666">=</span> signature
+
+transaction <span style="color:#666">=</span> {
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">inputs</span><span style="color:#ba2121">&#34;</span>: [<span style="color:#008000">input</span>], 
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputs</span><span style="color:#ba2121">&#34;</span>: [newOutput], 
+    <span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">timestamp</span><span style="color:#ba2121">&#34;</span>: <span style="color:#008000">int</span>(time<span style="color:#666">.</span>time()),
+}
+<span style="color:#008000;font-weight:bold">print</span>(json<span style="color:#666">.</span>dumps(transaction, sort_keys<span style="color:#666">=</span>True, indent<span style="color:#666">=</span><span style="color:#666">4</span>))
+
+<span style="color:#408080;font-style:italic"># broadcast the signed transaction on the network</span>
+success <span style="color:#666">=</span> request(<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">sendrawtransaction</span><span style="color:#ba2121">&#34;</span>, {<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">transaction</span><span style="color:#ba2121">&#34;</span>: transaction})[<span style="color:#ba2121"></span><span style="color:#ba2121">&#34;</span><span style="color:#ba2121">result</span><span style="color:#ba2121">&#34;</span>]
+<span style="color:#008000;font-weight:bold">print</span>(success)
+</code></pre></div><p>Example signed multisig transaction:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Json" data-lang="Json">{
+    <span style="color:#008000;font-weight:bold">&#34;inputs&#34;</span>: [
+        {
+            <span style="color:#008000;font-weight:bold">&#34;data&#34;</span>: {
+                <span style="color:#008000;font-weight:bold">&#34;signatures&#34;</span>: {
+                    <span style="color:#008000;font-weight:bold">&#34;1&#34;</span>: <span style="color:#ba2121">&#34;MEQCIDb9kqeUoKDXN3dPBf913LLuf8t8a+psb7Zv8FFoQR7vAiASGNVGvLjQTnb9MoQoYR6V0jANNHyO8DUABwDTSSO8Rw==&#34;</span>,
+                    <span style="color:#008000;font-weight:bold">&#34;2&#34;</span>: <span style="color:#ba2121">&#34;MEUCIQDAHhLEXvyHiQ/TtyMTvpA91vXAtRhFbnowC6RwAhOzCAIgKhq7zu9EK7WbtmCXK4SgFVN1BQHCZ3nwgr0BW/bp4cw=&#34;</span>
+                }
+            },
+            <span style="color:#008000;font-weight:bold">&#34;outputId&#34;</span>: <span style="color:#ba2121">&#34;b352a38d2846a3aed7d0a38630a175e64c07ef9a51d4ebbe0a17b45307e734f2&#34;</span>
+        }
+    ],
+    <span style="color:#008000;font-weight:bold">&#34;outputs&#34;</span>: [
+        {
+            <span style="color:#008000;font-weight:bold">&#34;data&#34;</span>: {
+                <span style="color:#008000;font-weight:bold">&#34;publicKey&#34;</span>: <span style="color:#ba2121">&#34;BNhtisPytzKtucZww4lA5mxgZG1qrd4vOBx8DJ7niFX8it3Jub7V2WG7Tc7WAg/SuTDYA7OJ624kfkb83Yg3hT8=&#34;</span>
+            },
+            <span style="color:#008000;font-weight:bold">&#34;nonce&#34;</span>: <span style="color:#666">0</span>,
+            <span style="color:#008000;font-weight:bold">&#34;value&#34;</span>: <span style="color:#666">7632906364</span>
+        }
+    ],
+    <span style="color:#008000;font-weight:bold">&#34;timestamp&#34;</span>: <span style="color:#666">1535128022</span>
+}
+</code></pre></div><h2 id="time-locked-outputs">Time locked outputs</h2>
+<p>In systems such as a <a href="https://lightning.network/lightning-network-paper.pdf">Lightning Network</a> and for contracts like futures, the ability to prevent the spending of an output until a given block height is required. In an options contract it might also be useful to prevent spending an output after a certain block height to create a limited time window in which the option can be exercised. There are two types of time lock: a <strong>relative lock</strong> and an <strong>absolute lock</strong>. The former locks an output based on the difference between the current block height and the block height the output being spent was included in. The latter only takes into account the current block height. The method of time locking in Cryptokernel involves retrieving the current blockchain tip (and optionally the block the output being spent was included in) and comparing its height to the rules defined in the contract.</p>
+<p>Example of an absolute time lock:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Lua" data-lang="Lua"><span style="color:#408080;font-style:italic">-- retrieve the current tip block</span>
+<span style="color:#008000;font-weight:bold">local</span> tipBlock <span style="color:#666">=</span> Blockchain.getBlock(<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">tip</span><span style="color:#ba2121">&#34;</span>)
+
+<span style="color:#408080;font-style:italic">-- spendable once the block height is greater than 500</span>
+<span style="color:#008000;font-weight:bold">return</span> tipBlock[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">height</span><span style="color:#ba2121">&#34;</span>] <span style="color:#666">&gt;</span> <span style="color:#666">500</span>
+</code></pre></div><p>Example of a relative time lock:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Lua" data-lang="Lua"><span style="color:#408080;font-style:italic">-- retrieve the current tip block</span>
+<span style="color:#008000;font-weight:bold">local</span> tipBlock <span style="color:#666">=</span> Blockchain.getBlock(<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">tip</span><span style="color:#ba2121">&#34;</span>)
+
+<span style="color:#408080;font-style:italic">-- retrieve the output being spent</span>
+<span style="color:#008000;font-weight:bold">local</span> thisOutput <span style="color:#666">=</span> Blockchain.getOutput(thisInput[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputId</span><span style="color:#ba2121">&#34;</span>])
+
+<span style="color:#408080;font-style:italic">-- retrieve the transaction the output was created in </span>
+<span style="color:#008000;font-weight:bold">local</span> creationTx <span style="color:#666">=</span> Blockchain.getTransaction(thisOutput[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">creationTx</span><span style="color:#ba2121">&#34;</span>])
+
+<span style="color:#408080;font-style:italic">-- retrieve the block the transaction was included in</span>
+<span style="color:#008000;font-weight:bold">local</span> confirmingBlock <span style="color:#666">=</span> Blockchain.getBlock(creationTx[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">confirmingBlock</span><span style="color:#ba2121">&#34;</span>])
+
+<span style="color:#408080;font-style:italic">-- spendable once more than 500 blocks have elapsed since the output was created</span>
+<span style="color:#008000;font-weight:bold">return</span> tipBlock[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">height</span><span style="color:#ba2121">&#34;</span>] <span style="color:#666">-</span> confirmingBlock[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">height</span><span style="color:#ba2121">&#34;</span>] <span style="color:#666">&gt;</span> <span style="color:#666">500</span>
+</code></pre></div><h2 id="covenants">Covenants</h2>
+<p>With Cryptokernel contracts it is possible define rules about <em>how</em> coins can be spent rather than just <em>when</em> they can be spent. Such rules are called <strong>covenants</strong>. A covenant can define arbitrary rules such as which public keys coins are allowed to be sent to, the set of contracts any new outputs created from the spent outputs must contain or the value of the outputs. An example covenant forces the spender of the output to include the same contract in any subsequent outputs.</p>
+<h3 id="forcing-contract-propagation">Forcing contract propagation</h3>
+<p>The script below gives an example of forced contract propagation. It enforces that all new outputs in a transaction that spends the output with the contract can subsequently be spent by anyone and that those new outputs re-enforce the same rule.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Lua" data-lang="Lua"><span style="color:#408080;font-style:italic">-- retrieve the output this input is spending</span>
+<span style="color:#008000;font-weight:bold">local</span> thisOutput <span style="color:#666">=</span> Blockchain.getOutput(thisInput[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputId</span><span style="color:#ba2121">&#34;</span>])
+
+<span style="color:#408080;font-style:italic">-- for each of the new outputs in the transaction</span>
+<span style="color:#008000;font-weight:bold">for</span> i, output <span style="color:#008000;font-weight:bold">in</span> ipairs(thisTransaction[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputs</span><span style="color:#ba2121">&#34;</span>]) <span style="color:#008000;font-weight:bold">do</span>
+    <span style="color:#408080;font-style:italic">-- check the contract of the new output is the same as this contract</span>
+    <span style="color:#008000;font-weight:bold">if</span> output[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">contract</span><span style="color:#ba2121">&#34;</span>] <span style="color:#666">~=</span> thisOutput[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">contract</span><span style="color:#ba2121">&#34;</span>] <span style="color:#008000;font-weight:bold">then</span>
+        <span style="color:#408080;font-style:italic">-- if not, the spend is invalid</span>
+        <span style="color:#008000;font-weight:bold">return</span> <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">Contract not propagated</span><span style="color:#ba2121">&#34;</span>
+    <span style="color:#008000;font-weight:bold">end</span>
+<span style="color:#008000;font-weight:bold">end</span>
+
+<span style="color:#408080;font-style:italic">-- anyone can spend</span>
+<span style="color:#008000;font-weight:bold">return</span> <span style="color:#008000;font-weight:bold">true</span>
+</code></pre></div><h3 id="pre-defining-spend-destinations">Pre-defining spend destinations</h3>
+<p>Your contract might need to lock funds so they can only be sent to a set of pre-defined destination public keys. This is useful when you want to give control over when and how many coin are sent but want to control what the coins are spent on. This might be useful for guardians issuing pocket money to their children, the provision of welfare or foreign aid or as a component of a larger contract.</p>
+<p>e.g.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Lua" data-lang="Lua"><span style="color:#408080;font-style:italic">-- Get the output associated with the input we&#39;re verifying</span>
+<span style="color:#008000;font-weight:bold">local</span> thisOutput <span style="color:#666">=</span> Blockchain.getOutput(thisInput[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputId</span><span style="color:#ba2121">&#34;</span>])
+
+<span style="color:#408080;font-style:italic">-- Check the public key is valid</span>
+<span style="color:#008000;font-weight:bold">local</span> crypto <span style="color:#666">=</span> Crypto.new()
+<span style="color:#008000;font-weight:bold">if</span> <span style="color:#a2f;font-weight:bold">not</span> crypto:setPublicKey(output[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">publicKey</span><span style="color:#ba2121">&#34;</span>]) <span style="color:#008000;font-weight:bold">then</span>
+    <span style="color:#008000;font-weight:bold">return</span> <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">Invalid public key</span><span style="color:#ba2121">&#34;</span>
+<span style="color:#008000;font-weight:bold">end</span>
+
+<span style="color:#408080;font-style:italic">-- Verify the signature is correct </span>
+<span style="color:#008000;font-weight:bold">if</span> <span style="color:#a2f;font-weight:bold">not</span> crypto:verify(thisInput[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputId</span><span style="color:#ba2121">&#34;</span>] <span style="color:#666">..</span> outputSetId, thisInput[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">signature</span><span style="color:#ba2121">&#34;</span>]) <span style="color:#008000;font-weight:bold">then</span>
+    <span style="color:#008000;font-weight:bold">return</span> <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">Invalid signature</span><span style="color:#ba2121">&#34;</span>
+<span style="color:#008000;font-weight:bold">end</span>
+
+<span style="color:#408080;font-style:italic">-- Ensure each of the outputs are sending to an approved pubkey</span>
+<span style="color:#008000;font-weight:bold">for</span> _, out <span style="color:#008000;font-weight:bold">in</span> ipairs(thisTransaction[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputs</span><span style="color:#ba2121">&#34;</span>]) <span style="color:#008000;font-weight:bold">do</span>
+    <span style="color:#008000;font-weight:bold">if</span> thisOutput[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">destinations</span><span style="color:#ba2121">&#34;</span>][out[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">publicKey</span><span style="color:#ba2121">&#34;</span>]] <span style="color:#666">~=</span> <span style="color:#008000;font-weight:bold">true</span> <span style="color:#008000;font-weight:bold">then</span>
+        <span style="color:#008000;font-weight:bold">return</span> <span style="color:#008000;font-weight:bold">false</span>
+    <span style="color:#008000;font-weight:bold">end</span>
+
+    <span style="color:#408080;font-style:italic">-- check there is no contract field in the output that would bypass the public key check</span>
+    <span style="color:#008000;font-weight:bold">if</span> out[<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span>][<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">contract</span><span style="color:#ba2121">&#34;</span>] <span style="color:#666">~=</span> <span style="color:#008000;font-weight:bold">nil</span> <span style="color:#008000;font-weight:bold">then</span>
+        <span style="color:#008000;font-weight:bold">return</span> <span style="color:#008000;font-weight:bold">false</span>
+    <span style="color:#008000;font-weight:bold">end</span>
+<span style="color:#008000;font-weight:bold">end</span>
+
+<span style="color:#008000;font-weight:bold">return</span> <span style="color:#008000;font-weight:bold">true</span>
+</code></pre></div><p>The sender of the funds would include in the data field of the output the above contract, the public key of the recipient in the <code>publicKey</code> field and the set of legal destination public keys as a map in a <code>destinations</code> field. To spend the funds the receiver only needs to sign the output as if it were a regular pay-to-public-key output and the spend will be valid as long as the new outputs send to an approved public key.</p>
+<p>Example output:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Json" data-lang="Json">{
+    <span style="color:#008000;font-weight:bold">&#34;data&#34;</span>: {
+        <span style="color:#008000;font-weight:bold">&#34;contract&#34;</span>: <span style="color:#ba2121">&#34;BCJNGGBAghgDAAD2BRtMdWFTABmTDQoaCgQIBAgIeFYAAQByKHdAAf8RAg0A8hJsb2NhbCB0aGlzT3V0cHV0ID0gQmxvY2tjaGFpbi5nZXQXABAoIgCBSW5wdXRbIm8SAGJJZCJdKSA/AKFjcnlwdG8gPSBDCQDTLm5ldygpIGlmIG5vdB0A4jpzZXRQdWJsaWNLZXkoQwC0WyJkYXRhIl1bInAaAABUAPIGdGhlbiByZXR1cm4gIkludmFsaWQgIgCbIGtleSIgZW5kXQBvdmVyaWZ5pQADQiAuLiAOAHdTZXRJZCwgJgAEgACfc2lnbmF0dXJlgAAGBiIAAX8AYGZvciBfLFgAoSBpbiBpcGFpcnN/ALRUcmFuc2FjdGlvboUAEHNVACBkb7MABmgBBvwAcGRlc3RpbmEyAF9zIl1bbxgBBJldIH49IHRydWWgAFRmYWxzZREBCTsAkWNvbnRyYWN0IjkAP25pbDgABAAEAAMVAABeAAUmAvZfAQk3AAAABgBAAAdAQABGgEAAR8DAACSAAAFGAEEAR0DBAGSAgACMgMEABsFBAAcBQgIHQUICpICAAaJAAAAeQACAgYACAKYAAAGMwMIABoFAAAfBQAJGAUMAHUEBAkaBQABHAcICR0HDAqSAAAI0ABEDNADwHYbAQwDGAEQAx0DEAaQAAQEegAOAxwFCAMeBxAMHAkIDB0JCBMcBggNfwMQDOAD5BMMBAADmAQABxwFCA8cBxQNfQMUYALGpgAAAKoH7f4MAgGAApiYAgAAWAAAABAvuAiUECu8CJQQKJQIkBAlLAiIEB98CeAQEbmV3BA3RAiIEByUAIAQFfwElBAq4AS4EE8ECIgQHrwInBAyXAiUECmICLQQSdQIiBAdjAisEEGQCIwQIZAIoBA1IAkQBAQQJAQJBAAEAAAQAMwAANwoADwQAxVYHAAAAC2QDEwXzABIHJgQTCA8AIBAovgPxBGdlbmVyYXRvcikiAAAANAAAAAwYAFVzdGF0ZRQAEQ4UAAFLASVvbBYAcAJfIwAAADJAAjRvdXQMAJABAAAABV9FTlYAAAAA&#34;</span>,
+        <span style="color:#008000;font-weight:bold">&#34;destinations&#34;</span>: {
+            <span style="color:#008000;font-weight:bold">&#34;BBSMn/8D0KXwRvJNEL+rxMXX54vaN/J1pv/Hs/klMIJeyJ9Z7/LkPM1WkJ6tXO7sSDzbg0fksLGJKDAopCzzU4Q=&#34;</span>: <span style="color:#008000;font-weight:bold">true</span>,
+            <span style="color:#008000;font-weight:bold">&#34;BC07/bUj/6IicuGCjgkg+QW8Ny/AXn4xqEkBguG21h9vkjpJsfoNM1qNlK/uHxZ3cJWpt3TSjWmcFNO5uwD85bU=&#34;</span>: <span style="color:#008000;font-weight:bold">true</span>,
+            <span style="color:#008000;font-weight:bold">&#34;BEzg0/o/kQ7vRSuEKi9bN+69wEEhRulchB5dDp8qeDr0x3qZVTerPQXpb1J8v0rp4kpccx2fY/UICziijjV31XU=&#34;</span>: <span style="color:#008000;font-weight:bold">true</span>
+        },
+        <span style="color:#008000;font-weight:bold">&#34;publicKey&#34;</span>: <span style="color:#ba2121">&#34;BNhtisPytzKtucZww4lA5mxgZG1qrd4vOBx8DJ7niFX8it3Jub7V2WG7Tc7WAg/SuTDYA7OJ624kfkb83Yg3hT8=&#34;</span>
+    },
+    <span style="color:#008000;font-weight:bold">&#34;nonce&#34;</span>: <span style="color:#666">0</span>,
+    <span style="color:#008000;font-weight:bold">&#34;value&#34;</span>: <span style="color:#666">7632996472</span>
+}
+</code></pre></div>
+</main>
+
+  <footer>
+  
+  
+  <hr/>
+  <!-- raw HTML omitted -->
+  
+  </footer>
+  </body>
+</html>
+

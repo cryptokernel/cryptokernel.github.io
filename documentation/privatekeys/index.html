@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Managing private keys | Cryptokernel</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-124597472-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-124597472-1');
+</script>
+
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+      <li><a href="/downloads/">Downloads</a></li>
+      
+      <li><a href="/documentation/">Documentation</a></li>
+      
+      <li><a href="https://github.com/mit-dci/cryptokernel">GitHub</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">Managing private keys</span></h1>
+
+
+</div>
+
+<main>
+<p>Using the <code>importprivkey</code> and <code>dumpprivkeys</code> functions in <code>ckd</code> it is possible to back up your raw private keys and import them into another <code>ckd</code> instance.</p>
+<h2 id="exporting-private-keys">Exporting private keys</h2>
+<p>If you wanted to retrieve the private key for the account <code>mining</code> in your wallet you would write:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ ./ckd dumpprivkeys mining
+Please enter your wallet passphrase: ********
+<span style="color:#666">{</span>
+	<span style="color:#ba2121">&#34;BEe1rQmiLfyVKfXo36Qw4D5u9J603jRDwtdiDEl0cwUF7mJwpDf66Ui8mECxCTCfbZHeDh4ZTXFTQOyHO0a6v4w=&#34;</span> : <span style="color:#ba2121">&#34;4V7unMJ3gwZ6gaRU1rL5hUfVnh13daE1yLcKC8CIXVY=&#34;</span>
+<span style="color:#666">}</span>
+</code></pre></div><p>The first value is the address (public key) and the second value is the private key. Private keys should be kept secret as knowledge of them allows you to spend any funds associated with them. However, it is important to back up your private keys because if you lose them you permanently lose access to your coins.</p>
+<h2 id="importing-private-keys">Importing private keys</h2>
+<p>A private key can be imported into another wallet using <code>importprivkey</code> as follows:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ ./ckd importprivkey myimportedkey <span style="color:#19177c">4V7unMJ3gwZ6gaRU1rL5hUfVnh13daE1yLcKC8CIXVY</span><span style="color:#666">=</span>
+Please enter your wallet passphrase: **********
+<span style="color:#666">{</span>
+	<span style="color:#ba2121">&#34;balance&#34;</span> : 0,
+	<span style="color:#ba2121">&#34;keys&#34;</span> : 
+	<span style="color:#666">[</span>
+		<span style="color:#666">{</span>
+			<span style="color:#ba2121">&#34;privKey&#34;</span> : 
+			<span style="color:#666">{</span>
+				<span style="color:#ba2121">&#34;cipherText&#34;</span> : <span style="color:#ba2121">&#34;aRg12joSDWJPzrxBHkxIyyOENBzzauvE0llDScD0pwGNRzGo32rSy9YY+yWofpQJ&#34;</span>,
+				<span style="color:#ba2121">&#34;iv&#34;</span> : <span style="color:#ba2121">&#34;vUMrDpn7BWkL5pIGwYNsDA==&#34;</span>,
+				<span style="color:#ba2121">&#34;salt&#34;</span> : <span style="color:#ba2121">&#34;1WBrjPlcDsPpaey+cQHSwDRXFwIi5lAdEtE6d9M/nRY=&#34;</span>
+			<span style="color:#666">}</span>,
+			<span style="color:#ba2121">&#34;pubKey&#34;</span> : <span style="color:#ba2121">&#34;BG/IPGCjFt8XhXXXWvGqRhncnViBcFKeTxBQuO9PlHzPSt0Hq7j5k0hItyZL8ntg2xIeZBDPT5TBOOugUJFM0yI=&#34;</span>
+		<span style="color:#666">}</span>,
+		<span style="color:#666">{</span>
+			<span style="color:#ba2121">&#34;privKey&#34;</span> : 
+			<span style="color:#666">{</span>
+				<span style="color:#ba2121">&#34;cipherText&#34;</span> : <span style="color:#ba2121">&#34;FbBLalreZGaXA4ImH5iEeUadtTCM7/W54Mlh7842gtC7nEn896zeJrx8xcasNiya&#34;</span>,
+				<span style="color:#ba2121">&#34;iv&#34;</span> : <span style="color:#ba2121">&#34;aJT6PULXZnVcloU5QzeVwA==&#34;</span>,
+				<span style="color:#ba2121">&#34;salt&#34;</span> : <span style="color:#ba2121">&#34;s2oVjrBVlIszRUT96QJfxbiYvXrQNKcQh5TPFzikiV4=&#34;</span>
+			<span style="color:#666">}</span>,
+			<span style="color:#ba2121">&#34;pubKey&#34;</span> : <span style="color:#ba2121">&#34;BEe1rQmiLfyVKfXo36Qw4D5u9J603jRDwtdiDEl0cwUF7mJwpDf66Ui8mECxCTCfbZHeDh4ZTXFTQOyHO0a6v4w=&#34;</span>
+		<span style="color:#666">}</span>
+	<span style="color:#666">]</span>,
+	<span style="color:#ba2121">&#34;name&#34;</span> : <span style="color:#ba2121">&#34;myimportedkey&#34;</span>
+<span style="color:#666">}</span>
+</code></pre></div><p>This will add the given private key to the given account name, or create a new account with that name if it does not already exist. The command will also trigger the wallet to rescan the blockchain to find any coins presently spendable with the private key.</p>
+
+</main>
+
+  <footer>
+  
+  
+  <hr/>
+  <!-- raw HTML omitted -->
+  
+  </footer>
+  </body>
+</html>
+

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <url>
+    <loc>http://cryptokernel.org/categories/</loc>
+  </url>
+  
+  <url>
+    <loc>http://cryptokernel.org/documentation/coincreation/</loc>
+  </url>
+  
+  <url>
+    <loc>http://cryptokernel.org/documentation/contracts/</loc>
+  </url>
+  
+  <url>
+    <loc>http://cryptokernel.org/documentation/</loc>
+  </url>
+  
+  <url>
+    <loc>http://cryptokernel.org/downloads/</loc>
+  </url>
+  
+  <url>
+    <loc>http://cryptokernel.org/</loc>
+  </url>
+  
+  <url>
+    <loc>http://cryptokernel.org/documentation/issues/</loc>
+  </url>
+  
+  <url>
+    <loc>http://cryptokernel.org/documentation/privatekeys/</loc>
+  </url>
+  
+  <url>
+    <loc>http://cryptokernel.org/documentation/quickstart/</loc>
+  </url>
+  
+  <url>
+    <loc>http://cryptokernel.org/tags/</loc>
+  </url>
+  
+  <url>
+    <loc>http://cryptokernel.org/documentation/transactions/</loc>
+  </url>
+  
+</urlset>

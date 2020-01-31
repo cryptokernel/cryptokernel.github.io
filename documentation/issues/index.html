@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Issues | Cryptokernel</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-124597472-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-124597472-1');
+</script>
+
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+      <li><a href="/downloads/">Downloads</a></li>
+      
+      <li><a href="/documentation/">Documentation</a></li>
+      
+      <li><a href="https://github.com/mit-dci/cryptokernel">GitHub</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">Issues</span></h1>
+
+
+</div>
+
+<main>
+<p>This is where common issues and solutions involved with CK will be listed.</p>
+<h2 id="errors-on-compilation">Errors on Compilation</h2>
+<p>If you&rsquo;re running on a fresh Linux installation, you may encounter some build errors when running make. The most encountered is:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">fatal error: lua.h, No such file or directory
+</code></pre></div><p>Fix:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~/Cryptokernel $ sudo cp /usr/include/lua5.3/<span style="color:#666">{</span>lauxlib.h,luaconf.h,lua.hpp,lualib.h,lua.h<span style="color:#666">}</span> /usr/local/include/
+</code></pre></div><p>Another error may come when make runs the test suite, as the lz4.so file cannot be found.</p>
+<p>Fix:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~/Cryptokernel $ sudo cp /usr/lib/lz4.so ~/CryptoKernel/
+</code></pre></div>
+</main>
+
+  <footer>
+  
+  
+  <hr/>
+  <!-- raw HTML omitted -->
+  
+  </footer>
+  </body>
+</html>
+

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Coin Creation | Cryptokernel</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-124597472-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-124597472-1');
+</script>
+
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+      <li><a href="/downloads/">Downloads</a></li>
+      
+      <li><a href="/documentation/">Documentation</a></li>
+      
+      <li><a href="https://github.com/mit-dci/cryptokernel">GitHub</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">Coin Creation</span></h1>
+
+
+</div>
+
+<main>
+<p>In the <a href="/documentation/quickstart">quickstart guide</a> we learned how to set up a new CryptoKernel environment, make a wallet, and mine K320. In this guide, we&rsquo;ll learn how to make us of Cryptokernel&rsquo;s multicoin functionality to bootstrap our own coin just by fiddling with a few config files, no C++ required.</p>
+<h2 id="genesis-block">Genesis Block</h2>
+<p>A genesis block is the first block of a new blockchain. Keep in mind that by creating this new coin, we will be creating an entirely new blockchain with an entirely different history than that of K320. Cryptokernel will differentiate between K320 and our new coin by following the blockchain all the way back down to this original block. So, the first thing we&rsquo;ll need to change for our new coin is the genesis block. Copy the genesisblock.json file, shown below, into a new file called genesisblockDoc.json.</p>
+<p><strong>K320 Genesis Block</strong></p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Lua" data-lang="Lua">{
+   <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">coinbaseTx</span><span style="color:#ba2121">&#34;</span> : {
+      <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputs</span><span style="color:#ba2121">&#34;</span> : [
+         {
+            <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span> : {
+               <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">contract</span><span style="color:#ba2121">&#34;</span> : null,
+               <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">publicKey</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">BDgkCUSogr3PrCJtY5P0wNsxfMF47I4ZGnJp/nn/CT4SerSibE0MKptXciR4zZCrpNB85xychJB4EURSR2TpYUs=</span><span style="color:#ba2121">&#34;</span>,
+               <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">message</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">For the many...</span><span style="color:#ba2121">&#34;</span>
+            },
+            <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">nonce</span><span style="color:#ba2121">&#34;</span> : <span style="color:#666">2461443158</span>, <span style="color:#666">//</span> arbitrary number
+            <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">value</span><span style="color:#ba2121">&#34;</span> : <span style="color:#666">9999986946</span>
+         }
+      ],
+      <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">timestamp</span><span style="color:#ba2121">&#34;</span> : <span style="color:#666">1501282954</span>
+   },
+   <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">consensusData</span><span style="color:#ba2121">&#34;</span> : null,
+   <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span> : null,
+   <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">height</span><span style="color:#ba2121">&#34;</span> : <span style="color:#666">1</span>,
+   <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">previousBlockId</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">0</span><span style="color:#ba2121">&#34;</span>,
+   <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">timestamp</span><span style="color:#ba2121">&#34;</span> : <span style="color:#666">1501282954</span>
+}
+</code></pre></div><p>Since the hash of the genesis block is what really counts in a blockchain we could simply change some numbers in any of the fields and get a new hash, but let&rsquo;s go through the data of the genesis block so we can understand what&rsquo;s happening and what we ought to change. If you&rsquo;re already familiar with what genesis blocks are, you can copy the new genesis block below and skip ahead to the next section, if not, stay here and we&rsquo;ll learn about what&rsquo;s happening in the JSON above.</p>
+<p>First, we see the that this object contains another <code>coinbaseTx</code> object. This object is a representation of a coinbase transaction, transaction often gets shortened to tx. Coinbase transaction are transactions that create coins and send them out to whatever public key is listed in the <code>data</code> object. One interesting feature of coinbase transactions is that they never have any inputs. Usually when we make transactions we list our own unspent transaction outputs, often abbreviated as <code>utxo</code>, as the input to a transaction as proof that we own the coins we are spending. These regular transactions are zero-sum because the amount that&rsquo;s lost by the sender is equal to the amount gained by the receiver. A coinbase transaction is positive sum because it adds money to the total supply.</p>
+<p>From this, we now know that this genesis block sent 99.99986946 K320 to the public key <code>BDgkCUSogr3PrCJtY5P0wNsxfMF47I4ZGnJp/nn/CT4SerSibE0MKptXciR4zZCrpNB85xychJB4EURSR2TpYUs=</code>. The value listed in the actual data is in the smallest monetary unit, like cents for dollars or <a href="https://en.bitcoin.it/wiki/Satoshi_(unit)">satoshis</a> for bitcoins. Let&rsquo;s change the public key in our new genesis block to our own public key that&rsquo;s in <code>config.json</code>. Also, let&rsquo;s change the amount of coins we create to 50 coins, or 500000000 units. You can also change the message if you like. I&rsquo;ve also changed the timestamp to the current Unix time at the time of writing.</p>
+<p>Look at the <code>height</code> field. This tells us the height, in blocks, of the block we&rsquo;re currently viewing. Not surprisingly, the genesis block has height 1, and has the blockchain grows and new blocks are created the height will increase. The current height of the K320 blockchain is 300821!</p>
+<p>Now that we&rsquo;ve made some changes and understand a bit about the genesis block we should be all set.</p>
+<p><strong>New Genesis Block</strong></p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Lua" data-lang="Lua">{
+   <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">coinbaseTx</span><span style="color:#ba2121">&#34;</span> : {
+      <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">outputs</span><span style="color:#ba2121">&#34;</span> : [
+         {
+            <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span> : {
+               <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">contract</span><span style="color:#ba2121">&#34;</span> : null,
+               <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">publicKey</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">BLBPmhIDXdwenbdAxbAWNXpFHqAWmPlOGUQ8k7VEIegqq0+VfDXJZEPdEdGsmlwdDlLeZmrbeB/koDFDQHoXlQA=</span><span style="color:#ba2121">&#34;</span>,
+               <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">message</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">Our new coin!</span><span style="color:#ba2121">&#34;</span>
+            },
+            <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">nonce</span><span style="color:#ba2121">&#34;</span> : <span style="color:#666">2461443158</span>,
+            <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">value</span><span style="color:#ba2121">&#34;</span> : <span style="color:#666">5000000000</span>
+         }
+      ],
+      <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">timestamp</span><span style="color:#ba2121">&#34;</span> : <span style="color:#666">1548440980</span>
+   },
+   <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">consensusData</span><span style="color:#ba2121">&#34;</span> : null,
+   <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">data</span><span style="color:#ba2121">&#34;</span> : null,
+   <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">height</span><span style="color:#ba2121">&#34;</span> : <span style="color:#666">1</span>,
+   <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">previousBlockId</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">0</span><span style="color:#ba2121">&#34;</span>,
+   <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">timestamp</span><span style="color:#ba2121">&#34;</span> : <span style="color:#666">1548440980</span>
+}
+</code></pre></div><h2 id="configuration">Configuration</h2>
+<p>In the following section, I&rsquo;ll be going explaining each of the entries in the below config.json file so we can understand exactly what we&rsquo;re doing by editing this file.</p>
+<p><strong>Base Configuration</strong></p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Lua" data-lang="Lua">{
+	<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">coins</span><span style="color:#ba2121">&#34;</span> : 
+	[
+		{
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">blockdb</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">./blockdb</span><span style="color:#ba2121">&#34;</span>,
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">consensus</span><span style="color:#ba2121">&#34;</span> : 
+			{
+				<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">params</span><span style="color:#ba2121">&#34;</span> : 
+				{
+					<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">blocktime</span><span style="color:#ba2121">&#34;</span> : <span style="color:#666">150</span>
+				},
+				<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">type</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">kgw_lyra2rev2</span><span style="color:#ba2121">&#34;</span>
+			},
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">genesisblock</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">genesisblock.json</span><span style="color:#ba2121">&#34;</span>,
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">name</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">K320</span><span style="color:#ba2121">&#34;</span>,
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">peerdb</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">./peers</span><span style="color:#ba2121">&#34;</span>,
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">port</span><span style="color:#ba2121">&#34;</span> : <span style="color:#666">49000</span>,
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">rpcport</span><span style="color:#ba2121">&#34;</span> : <span style="color:#666">8383</span>,
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">subsidy</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">k320</span><span style="color:#ba2121">&#34;</span>,
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">walletdb</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">./addressesdb</span><span style="color:#ba2121">&#34;</span>
+		}
+	],
+	<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">rpcpassword</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">password</span><span style="color:#ba2121">&#34;</span>,
+	<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">rpcuser</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">ckrpc</span><span style="color:#ba2121">&#34;</span>,
+	<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">verbose</span><span style="color:#ba2121">&#34;</span> : <span style="color:#008000;font-weight:bold">false</span>,
+	<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">pubKey</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">BGOjpbmxzX26d7zHmNxy3RWb94MzTciGhF7y8ehF2EH2BlTDStCrAhSmmfmbaWDuRYqagRViAhVj6QhOsfp4oT4=</span><span style="color:#ba2121">&#34;</span>,
+	<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">miner</span><span style="color:#ba2121">&#34;</span>: <span style="color:#008000;font-weight:bold">false</span>
+}
+</code></pre></div><p><strong>Coins</strong></p>
+<p>The <strong><code>coins</code></strong> array is a list of objects that represent a single coin. Cryptokernel can support many coins running in a single instance of ckd, so there&rsquo;s limit on how many coin definitions we can include in this array. <!-- raw HTML omitted -->
+<strong><code>blockdb</code></strong> is a path to the folder that contains the blockchain database. <!-- raw HTML omitted -->
+<strong><code>consensus</code></strong> is an object that contains information about what consensus algorithm our coin will implement. If you&rsquo;re wondering what a consensus algorithm is you can check out explanations of the most popular ones: <a href="https://en.bitcoin.it/wiki/Proof_of_work">Proof of Work</a> and <a href="https://github.com/ethereum/wiki/wiki/Proof-of-Stake-FAQs">Proof of Stake</a>. <!-- raw HTML omitted -->
+<strong><code>blocktime</code></strong> indicates about how often a new block should be found in seconds, so 2.5 minutes on average for K320. <!-- raw HTML omitted -->
+<strong><code>type</code></strong> indicates which consensus algorithm our coin will use. Currently, Cryptokernel only supports the <code>kgw_lyrarev2</code>, but in the future we could choose between PoW, PoS, and many other algorithms right here in the config file. <!-- raw HTML omitted -->
+<strong><code>genesisblock</code></strong> is the name of the file that contains the genesis block definition, in our case this will be <code>genesisblockDoc.json</code>. <code>name</code> is the name of our new coin. <!-- raw HTML omitted -->
+<strong><code>peerdb</code></strong> is a path to the folder that contains our peers that we try to connect to and sync our blockchains with. <!-- raw HTML omitted -->
+<strong><code>port</code></strong> is the port number that Cryptokernel uses to contact other nodes. We&rsquo;ll have to change this if we&rsquo;re running multiple coins. <!-- raw HTML omitted -->
+<strong><code>rpcport</code></strong> is the port that ckd uses when making rpc calls like <code>getinfo</code> and <code>sendtoaddress</code>. These are just api calls that make interacting with ckd easier. <!-- raw HTML omitted -->
+<strong><code>subsidy</code></strong> is a function that returns a block reward given a block height. Currently the only subsidy function that is available is k320. For a description of k320 you can look <a href="https://github.com/mit-dci/CryptoKernel">here</a> and for the definition in code you can go <a href="https://github.com/mit-dci/CryptoKernel/blob/master/src/client/multicoin.cpp#L80">here</a>. <!-- raw HTML omitted -->
+<strong><code>walletdb</code></strong> is a path to the folder that contains all of the wallet information for this node and coin.</p>
+<p><strong>New Configuration</strong></p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Lua" data-lang="Lua">{
+	<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">coins</span><span style="color:#ba2121">&#34;</span> : 
+	[
+		{
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">blockdb</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">./blockdbDoc</span><span style="color:#ba2121">&#34;</span>,
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">consensus</span><span style="color:#ba2121">&#34;</span> : 
+			{
+				<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">params</span><span style="color:#ba2121">&#34;</span> : 
+				{
+					<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">blocktime</span><span style="color:#ba2121">&#34;</span> : <span style="color:#666">150</span>
+				},
+				<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">type</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">kgw_lyra2rev2</span><span style="color:#ba2121">&#34;</span>
+			},
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">genesisblock</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">genesisblockDoc.json</span><span style="color:#ba2121">&#34;</span>,
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">name</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">DocCoin</span><span style="color:#ba2121">&#34;</span>,
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">peerdb</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">./peersDoc</span><span style="color:#ba2121">&#34;</span>,
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">port</span><span style="color:#ba2121">&#34;</span> : <span style="color:#666">48000</span>,
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">rpcport</span><span style="color:#ba2121">&#34;</span> : <span style="color:#666">8380</span>,
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">subsidy</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">k320</span><span style="color:#ba2121">&#34;</span>,
+			<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">walletdb</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">./addressesdbDoc</span><span style="color:#ba2121">&#34;</span>
+		}
+	],
+	<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">rpcpassword</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">password</span><span style="color:#ba2121">&#34;</span>,
+	<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">rpcuser</span><span style="color:#ba2121">&#34;</span> : <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">ckrpc</span><span style="color:#ba2121">&#34;</span>,
+	<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">verbose</span><span style="color:#ba2121">&#34;</span> : <span style="color:#008000;font-weight:bold">true</span>,
+	<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">pubKey</span><span style="color:#ba2121">&#34;</span>: <span style="color:#ba2121">&#34;</span><span style="color:#ba2121">BGOjpbmxzX26d7zHmNxy3RWb94MzTciGhF7y8ehF2EH2BlTDStCrAhSmmfmbaWDuRYqagRViAhVj6QhOsfp4oT4=</span><span style="color:#ba2121">&#34;</span>,
+	<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">miner</span><span style="color:#ba2121">&#34;</span>: <span style="color:#008000;font-weight:bold">false</span>
+}
+</code></pre></div><p>Notice how we&rsquo;ve changed the locations of the <code>blockdb</code>, <code>peerdb</code>, and <code>walletdb</code>. If you haven&rsquo;t previously run k320 on this given instance you wouldn&rsquo;t need to change these, but since I assume that you&rsquo;ve done the quickstart guide we&rsquo;ll have to change them. We&rsquo;ve also changed the <code>genesisblock</code> to point to our newly created json file, the <code>name</code>, the <code>port</code>, and the <code>rpcport</code>. At this point we should be ready to go. Make sure you have replaced <code>rpcpassword</code> and <code>rpcuser</code> to whatever you have set on your instance. Then we&rsquo;ll simply navigate to our CryptoKernel folder and run the <code>./ckd</code> command. Here we&rsquo;ll follow the same steps in the quickstart guide to create a wallet password. After you&rsquo;ve done that, you can then go back into the <code>config.json</code> file and set <code>verbose</code> to true. This will allow us to see exactly what&rsquo;s going on in the ckd. After this, running ckd should get you an output similar to this.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~/CryptoKernel $ ./ckd
+Fri Jan <span style="color:#666">25</span> 20:53:49 <span style="color:#666">2019</span> INFO blockchain::verifyTransaction<span style="color:#666">(</span><span style="color:#666">)</span>: Verified successfully
+Fri Jan <span style="color:#666">25</span> 20:53:49 <span style="color:#666">2019</span> INFO blockchain::submitBlock<span style="color:#666">(</span><span style="color:#666">)</span>: successfully submitted block: <span style="color:#666">{</span>
+	<span style="color:#ba2121">&#34;coinbaseTx&#34;</span> : <span style="color:#ba2121">&#34;39645948279aa6f0aa9c215b2d861dd58b5ca005a77e2df32e7d7abbb8cf1f40&#34;</span>,
+	<span style="color:#ba2121">&#34;consensusData&#34;</span> : null,
+	<span style="color:#ba2121">&#34;data&#34;</span> : null,
+	<span style="color:#ba2121">&#34;height&#34;</span> : 1,
+	<span style="color:#ba2121">&#34;previousBlockId&#34;</span> : <span style="color:#ba2121">&#34;0&#34;</span>,
+	<span style="color:#ba2121">&#34;timestamp&#34;</span> : <span style="color:#666">1548440980</span>
+<span style="color:#666">}</span>
+
+Fri Jan <span style="color:#666">25</span> 20:53:49 <span style="color:#666">2019</span> INFO blockchain<span style="color:#666">(</span><span style="color:#666">)</span>: Successfully imported genesis block
+Fri Jan <span style="color:#666">25</span> 20:53:50 <span style="color:#666">2019</span> INFO Network<span style="color:#666">(</span><span style="color:#666">)</span>: Current height: 1, best height: 1, start height: <span style="color:#666">1</span>
+Fri Jan <span style="color:#666">25</span> 20:53:50 <span style="color:#666">2019</span> INFO Wallet<span style="color:#666">(</span><span style="color:#666">)</span>: Wallet upgrade started <span style="color:#666">0</span> -&gt; <span style="color:#666">2</span>
+Enter new wallet passphrase <span style="color:#666">(</span>min <span style="color:#666">8</span> chars<span style="color:#666">)</span>: Fri Jan <span style="color:#666">25</span> 20:53:50 <span style="color:#666">2019</span> INFO Consensus::PoW::miner<span style="color:#666">(</span><span style="color:#666">)</span>: found a block! Submitting to blockchain
+Fri Jan <span style="color:#666">25</span> 20:53:50 <span style="color:#666">2019</span> INFO blockchain::verifyTransaction<span style="color:#666">(</span><span style="color:#666">)</span>: Verified successfully
+Fri Jan <span style="color:#666">25</span> 20:53:50 <span style="color:#666">2019</span> INFO blockchain::submitBlock<span style="color:#666">(</span><span style="color:#666">)</span>: successfully submitted block: <span style="color:#666">{</span>
+	<span style="color:#ba2121">&#34;coinbaseTx&#34;</span> : <span style="color:#ba2121">&#34;81e1a5a76a64ad34bfe853979be595d5e37cf3fc0e0fb8ea87119dbb9c1de2e8&#34;</span>,
+	<span style="color:#ba2121">&#34;consensusData&#34;</span> : 
+	<span style="color:#666">{</span>
+		<span style="color:#ba2121">&#34;nonce&#34;</span> : 9164,
+		<span style="color:#ba2121">&#34;target&#34;</span> : <span style="color:#ba2121">&#34;fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff&#34;</span>,
+		<span style="color:#ba2121">&#34;totalWork&#34;</span> : <span style="color:#ba2121">&#34;fffff00000000000000000000000000000000000000000000000000000000000&#34;</span>
+	<span style="color:#666">}</span>,
+	<span style="color:#ba2121">&#34;data&#34;</span> : null,
+	<span style="color:#ba2121">&#34;height&#34;</span> : 2,
+	<span style="color:#ba2121">&#34;previousBlockId&#34;</span> : <span style="color:#ba2121">&#34;ade035e2f63cf24ecec5ddd3d4ae1f3bae1aeffc87665808f8bdde36d92cbd5a&#34;</span>,
+	<span style="color:#ba2121">&#34;timestamp&#34;</span> : <span style="color:#666">1548440980</span>
+<span style="color:#666">}</span>
+</code></pre></div><p>Here we can see that the genesis block gets verified and submitted to the blockchain! Our miner then finds another block and submits it to the blockchain, but before we can reap the rewards of mining we have to configure mining like we did in the quickstart guide. When executing rpc commands in the terminal through ckd like getinfo or account, make sure to either have a second terminal open or have ckd running as a daemon, using the -daemon flag on start, with verbose set to false in your config file.</p>
+<p>e.g.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~/CryptoKernel $ ./ckd -p <span style="color:#666">8380</span> account mining_rewards
+Please enter your wallet passphrase: ********
+<span style="color:#666">{</span>
+	<span style="color:#ba2121">&#34;balance&#34;</span> : <span style="color:#ba2121">&#34;0&#34;</span>,
+	<span style="color:#ba2121">&#34;keys&#34;</span> : 
+	<span style="color:#666">[</span>
+		<span style="color:#666">{</span>
+			<span style="color:#ba2121">&#34;privKey&#34;</span> : 
+			<span style="color:#666">{</span>
+				<span style="color:#ba2121">&#34;cipherText&#34;</span> : <span style="color:#ba2121">&#34;qtWvIRW3E9wHDclGPZ4GTjAolBjVT8Dpe4st8SUzBahv7oE8SpQ9eeUlNtjpRLLZ&#34;</span>,
+				<span style="color:#ba2121">&#34;iv&#34;</span> : <span style="color:#ba2121">&#34;0/GiyAoK3D0OvozHALGK7g==&#34;</span>,
+				<span style="color:#ba2121">&#34;salt&#34;</span> : <span style="color:#ba2121">&#34;MJOLKLDeQWVZpU8TQ0+eruKbov3Ub+gB16KDU5lelD0=&#34;</span>
+			<span style="color:#666">}</span>,
+			<span style="color:#ba2121">&#34;pubKey&#34;</span> : <span style="color:#ba2121">&#34;BDdUhYtSgftZzhzQo1DKZyK4B3GkM8WnaP0IOv9oFmcWxXXGlmeFoguLmHrVSY8/56BxH8Dpz3Lyw7cKw/SjPRM=&#34;</span>
+		<span style="color:#666">}</span>
+	<span style="color:#666">]</span>,
+	<span style="color:#ba2121">&#34;name&#34;</span> : <span style="color:#ba2121">&#34;mining_rewards&#34;</span>
+<span style="color:#666">}</span>
+</code></pre></div><p>Once you have this, copy the public key and paste it into your <code>config.json</code> so ckd knows to send the mining rewards there. After running <code>./ckd</code> again you should see your balance going up.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~/CryptoKernel $ ./ckd -p <span style="color:#666">8380</span> account mining 
+Please enter your wallet passphrase: ********
+<span style="color:#666">{</span>
+	<span style="color:#ba2121">&#34;balance&#34;</span> : <span style="color:#ba2121">&#34;199.99909&#34;</span>,
+	<span style="color:#ba2121">&#34;keys&#34;</span> : 
+	<span style="color:#666">[</span>
+		<span style="color:#666">{</span>
+			<span style="color:#ba2121">&#34;privKey&#34;</span> : 
+			<span style="color:#666">{</span>
+				<span style="color:#ba2121">&#34;cipherText&#34;</span> : <span style="color:#ba2121">&#34;LV+o/r/nAvlMweHCdAboIeJiOqCr2fTcmvXQWELFOLrRMsf9o4hm8fVmRrO3hZRr&#34;</span>,
+				<span style="color:#ba2121">&#34;iv&#34;</span> : <span style="color:#ba2121">&#34;fn1h/MGxoBGxjwNY6DH3BQ==&#34;</span>,
+				<span style="color:#ba2121">&#34;salt&#34;</span> : <span style="color:#ba2121">&#34;osYdFlQGhqIstluaQT6b3QaU30HB4GANbgkPr7DV3VM=&#34;</span>
+			<span style="color:#666">}</span>,
+			<span style="color:#ba2121">&#34;pubKey&#34;</span> : <span style="color:#ba2121">&#34;BPrCvlFrpmC1g8SDQSoW2j7ZaIW2Va1cKrI556lex7QGBZvJYLhSQHglfhTf+HWyMMg8klxFo67LGC4V6YVdvNg=&#34;</span>
+		<span style="color:#666">}</span>
+	<span style="color:#666">]</span>,
+	<span style="color:#ba2121">&#34;name&#34;</span> : <span style="color:#ba2121">&#34;mining&#34;</span>
+<span style="color:#666">}</span>
+</code></pre></div><p>Since you&rsquo;ll be the only one mining, you&rsquo;ll get all the block rewards. Now, you can create a new account under the same instance and start the transactions guide, or read on to learn about linking other nodes with your current node.</p>
+<p>##Peers</p>
+<p>When you run ckd in verbose mode you should be seeing a lot of failed attempts to connect with other peers. It probably looks something like this:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">Wed Jan <span style="color:#666">30</span> 11:25:16 <span style="color:#666">2019</span> WARNING Network<span style="color:#666">(</span><span style="color:#666">)</span>: Failed to connect to 18.85.22.252
+Wed Jan <span style="color:#666">30</span> 11:25:16 <span style="color:#666">2019</span> INFO Network<span style="color:#666">(</span><span style="color:#666">)</span>: Attempting to connect to 159.65.161.209
+Wed Jan <span style="color:#666">30</span> 11:25:16 <span style="color:#666">2019</span> WARNING Network<span style="color:#666">(</span><span style="color:#666">)</span>: Failed to connect to 159.65.161.209
+Wed Jan <span style="color:#666">30</span> 11:25:16 <span style="color:#666">2019</span> INFO Network<span style="color:#666">(</span><span style="color:#666">)</span>: Attempting to connect to 185.202.172.181
+Wed Jan <span style="color:#666">30</span> 11:25:16 <span style="color:#666">2019</span> WARNING Network<span style="color:#666">(</span><span style="color:#666">)</span>: Failed to connect to 185.202.172.181
+</code></pre></div><p>This is happening because K320 comes with a list of predefined nodes whose IP addresses are listed in the <code>peers.txt</code> file. These peers are known to be reliable and up-to-date on the K320 blockchain. Since we are no longer on the K320 blockchain, these nodes will be of no use to us, so we can delete them out of the <code>peers.txt</code> and delete our current <code>peersdb</code>. Now, when we run with the miner turned on the output should look something like the output below. All we should be seeing is the mining process.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">Thu Jan <span style="color:#666">31</span> 11:00:15 <span style="color:#666">2019</span> INFO Wallet::digestBlock<span style="color:#666">(</span><span style="color:#666">)</span>: Digesting block <span style="color:#666">4</span>
+Thu Jan <span style="color:#666">31</span> 11:00:26 <span style="color:#666">2019</span> INFO Network<span style="color:#666">(</span><span style="color:#666">)</span>: Current height: 4, best height: 4, start height: <span style="color:#666">4</span>
+Thu Jan <span style="color:#666">31</span> 11:00:34 <span style="color:#666">2019</span> INFO Consensus::PoW::miner<span style="color:#666">(</span><span style="color:#666">)</span>: current block is stale, generating a new one. HR: 69.021851 KH/s
+Thu Jan <span style="color:#666">31</span> 11:00:37 <span style="color:#666">2019</span> INFO Consensus::PoW::miner<span style="color:#666">(</span><span style="color:#666">)</span>: found a block! Submitting to blockchain
+Thu Jan <span style="color:#666">31</span> 11:00:37 <span style="color:#666">2019</span> INFO blockchain::verifyTransaction<span style="color:#666">(</span><span style="color:#666">)</span>: Verified successfully
+Thu Jan <span style="color:#666">31</span> 11:00:37 <span style="color:#666">2019</span> INFO blockchain::submitBlock<span style="color:#666">(</span><span style="color:#666">)</span>: successfully submitted block: <span style="color:#666">{</span>
+        <span style="color:#ba2121">&#34;coinbaseTx&#34;</span> : <span style="color:#ba2121">&#34;6b82288fbcfdd347660bc88e6339cf478c53e2cacdde40eb47faf37186d66df2&#34;</span>,
+        <span style="color:#ba2121">&#34;consensusData&#34;</span> :
+        <span style="color:#666">{</span>
+                <span style="color:#ba2121">&#34;nonce&#34;</span> : 1664334,
+                <span style="color:#ba2121">&#34;target&#34;</span> : <span style="color:#ba2121">&#34;fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff&#34;</span>,
+                <span style="color:#ba2121">&#34;totalWork&#34;</span> : <span style="color:#ba2121">&#34;3ffffc00000000000000000000000000000000000000000000000000000000000&#34;</span>
+        <span style="color:#666">}</span>,
+        <span style="color:#ba2121">&#34;data&#34;</span> : null,
+        <span style="color:#ba2121">&#34;height&#34;</span> : 5,
+        <span style="color:#ba2121">&#34;previousBlockId&#34;</span> : <span style="color:#ba2121">&#34;8ca4281064d7c957b9c2b97d2d4d19dcc16f4acdb2194c9964974394c0253cda&#34;</span>,
+        <span style="color:#ba2121">&#34;timestamp&#34;</span> : <span style="color:#666">1548950434</span>
+<span style="color:#666">}</span>
+
+Thu Jan <span style="color:#666">31</span> 11:00:38 <span style="color:#666">2019</span> INFO Wallet::digestBlock<span style="color:#666">(</span><span style="color:#666">)</span>: Digesting block <span style="color:#666">5</span>
+Thu Jan <span style="color:#666">31</span> 11:00:43 <span style="color:#666">2019</span> INFO Consensus::PoW::miner<span style="color:#666">(</span><span style="color:#666">)</span>: found a block! Submitting to blockchain
+Thu Jan <span style="color:#666">31</span> 11:00:43 <span style="color:#666">2019</span> INFO blockchain::verifyTransaction<span style="color:#666">(</span><span style="color:#666">)</span>: Verified successfully
+Thu Jan <span style="color:#666">31</span> 11:00:43 <span style="color:#666">2019</span> INFO blockchain::submitBlock<span style="color:#666">(</span><span style="color:#666">)</span>: successfully submitted block: <span style="color:#666">{</span>
+        <span style="color:#ba2121">&#34;coinbaseTx&#34;</span> : <span style="color:#ba2121">&#34;e176c10e79fcf9eee31bd0add0ef540921a92f9fb4fc14ecc28fdf1854cef2e8&#34;</span>,
+        <span style="color:#ba2121">&#34;consensusData&#34;</span> :
+        <span style="color:#666">{</span>
+                <span style="color:#ba2121">&#34;nonce&#34;</span> : 439531,
+                <span style="color:#ba2121">&#34;target&#34;</span> : <span style="color:#ba2121">&#34;fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff&#34;</span>,
+                <span style="color:#ba2121">&#34;totalWork&#34;</span> : <span style="color:#ba2121">&#34;4ffffb00000000000000000000000000000000000000000000000000000000000&#34;</span>
+        <span style="color:#666">}</span>,
+        <span style="color:#ba2121">&#34;data&#34;</span> : null,
+        <span style="color:#ba2121">&#34;height&#34;</span> : 6,
+        <span style="color:#ba2121">&#34;previousBlockId&#34;</span> : <span style="color:#ba2121">&#34;8cc2f87a170997137df1dc68ab9500a4140ed0d43ef13d86e6f6fc0518baa034&#34;</span>,
+        <span style="color:#ba2121">&#34;timestamp&#34;</span> : <span style="color:#666">1548950437</span>
+<span style="color:#666">}</span>
+</code></pre></div><p>If you have another computer with a different IP address or a friend that is willing to setup their own instance, then you can populate your peers file with that information and start communicating on the network. If not, we&rsquo;ll see how to set up an AWS ec2 instance that will communicate with us.</p>
+<p><strong>Creating a Peer on AWS</strong></p>
+<p>This guide assumes you&rsquo;re familiar with spinning up new instances on AWS. Also, this exercise should not exceed the free tier limits that AWS imposes. First, select a micro ec2 linux installation. This guide will be using Ubuntu 16.04. Now that we have a new instance, we need to install Cryptokernel. You can either build from the source code using <code>git clone https://github.com/mit-dci/CryptoKernel.git</code> or you can get the zipped executable, details below.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">$ wget https://github.com/mit-dci/CryptoKernel/releases/download/v0.2.0/cryptokernel-v0.2.0-linux-amd64.zip
+$ sudo apt install unzip
+$ unzip cryptokernel-v0.2.0-linux-amd64.zip 
+$ mv cryptokernel-v0.2.0-linux-amd64/ cryptokernel
+</code></pre></div><p>Keep in mind that the link to the zip download will change in the future and you may need to change it to keep up with the latest release. Now that we have our instance, we&rsquo;ll want to copy over our <code>genesisblockDoc.json</code> and our <code>config.json</code> files.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">$ scp -i path/to/your/key.pem ~/path/to/your/config.json  ubuntu@ec2-52-15-112-14.us-east-2.compute.amazonaws.com:~/
+$ scp -i path/to/your/key.pem ~/path/to/your/genesisblockDoc.json  ubuntu@ec2-52-15-112-14.us-east-2.compute.amazonaws.com:~/
+</code></pre></div><p>Delete the existing <code>config.json</code> from the cryptokernel directory and then move the copied files.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">$ mv config.json cryptokernel/
+$ mv genesisblockDoc.json cryptokernel/
+</code></pre></div><p>Now we have a node for our coin, but it can&rsquo;t communicate with our first node. We need to configure a security group within AWS that allow traffic into and out of our node. We&rsquo;ll create a security group called <code>ckGroup</code> that does this, shown below.</p>
+<p>Inbound Rule:
+<img src="../../images/inbound_rule.png" alt="alt text" title="Logo Title Text 1"></p>
+<p>Outbound Rule:
+<img src="../../images/outbound_rule.png" alt="alt text" title="Logo Title Text 1"></p>
+<p>Once that&rsquo;s been created copy, the public IPv4 address of your ec2 instance into the <code>peers.txt</code> file of your original instance. Run <code>ckd</code> on both machines and watch as they connect to each other.</p>
+<p>Local machine:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">Thu Jan <span style="color:#666">31</span> 12:26:37 <span style="color:#666">2019</span> INFO Network<span style="color:#666">(</span><span style="color:#666">)</span>: Attempting to connect to 52.15.112.14
+Thu Jan <span style="color:#666">31</span> 12:26:37 <span style="color:#666">2019</span> WARNING Network<span style="color:#666">(</span><span style="color:#666">)</span>: Failed to connect to 52.15.112.14
+Thu Jan <span style="color:#666">31</span> 12:26:37 <span style="color:#666">2019</span> INFO Network<span style="color:#666">(</span><span style="color:#666">)</span>: Attempting to connect to 52.15.112.14
+Thu Jan <span style="color:#666">31</span> 12:26:37 <span style="color:#666">2019</span> WARNING Network<span style="color:#666">(</span><span style="color:#666">)</span>: Failed to connect to 52.15.112.14
+Thu Jan <span style="color:#666">31</span> 12:26:37 <span style="color:#666">2019</span> INFO Network<span style="color:#666">(</span><span style="color:#666">)</span>: Attempting to connect to 52.15.112.14
+Thu Jan <span style="color:#666">31</span> 12:26:37 <span style="color:#666">2019</span> WARNING Network<span style="color:#666">(</span><span style="color:#666">)</span>: Failed to connect to 52.15.112.14
+Thu Jan <span style="color:#666">31</span> 12:26:37 <span style="color:#666">2019</span> INFO Network<span style="color:#666">(</span><span style="color:#666">)</span>: Attempting to connect to 52.15.112.14
+Thu Jan <span style="color:#666">31</span> 12:26:37 <span style="color:#666">2019</span> INFO Network<span style="color:#666">(</span><span style="color:#666">)</span>: Successfully connected to 52.15.112.14
+Thu Jan <span style="color:#666">31</span> 12:26:38 <span style="color:#666">2019</span> INFO Network<span style="color:#666">(</span><span style="color:#666">)</span>: Discovered new peer: 204.9.220.50
+</code></pre></div><p>AWS machine:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">Thu Jan <span style="color:#666">31</span> 17:26:37 <span style="color:#666">2019</span> INFO Network<span style="color:#666">(</span><span style="color:#666">)</span>: Current height: 3, best height: 3, start height: <span style="color:#666">3</span>
+Thu Jan <span style="color:#666">31</span> 17:26:37 <span style="color:#666">2019</span> INFO Network<span style="color:#666">(</span><span style="color:#666">)</span>: Peer connected from 204.9.220.50:65171
+Thu Jan <span style="color:#666">31</span> 17:26:38 <span style="color:#666">2019</span> INFO Wallet::digestBlock<span style="color:#666">(</span><span style="color:#666">)</span>: Digesting block <span style="color:#666">3</span>
+Thu Jan <span style="color:#666">31</span> 17:26:39 <span style="color:#666">2019</span> INFO Network<span style="color:#666">(</span><span style="color:#666">)</span>: Discovered new peer: 52.15.112.14
+</code></pre></div>
+</main>
+
+  <footer>
+  
+  
+  <hr/>
+  <!-- raw HTML omitted -->
+  
+  </footer>
+  </body>
+</html>
+

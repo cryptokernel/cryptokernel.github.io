@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quickstart | Cryptokernel</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-124597472-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-124597472-1');
+</script>
+
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+      <li><a href="/downloads/">Downloads</a></li>
+      
+      <li><a href="/documentation/">Documentation</a></li>
+      
+      <li><a href="https://github.com/mit-dci/cryptokernel">GitHub</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">Quickstart</span></h1>
+
+
+</div>
+
+<main>
+<p>This quickstart guide will help you to run a Cryptokernel node with the reference coin K320. First we will download and install the Cryptokernel software, synchronise with the blockchain, create a new K320 receiving address and configure mining in order to acquire some coins. You can use these coins to further explore Cryptokernel.</p>
+<h2 id="download-and-install">Download and install</h2>
+<p>Visit the <a href="/downloads">downloads</a> page in order to download the latest Cryptokernel release for your platform. At present 64-bit Windows, MacOS and Linux binaries are provided. It is also possible to build Cryptokernel from the source code. Once you have downloaded the archive for your platform, extract its contents to a location of your choice.</p>
+<h2 id="a-nameterminalaopening-the-terminal"><!-- raw HTML omitted --><!-- raw HTML omitted -->Opening the terminal</h2>
+<p><code>ckd</code> is the reference Cryptokernel daemon that contains everything you need to run a K320 node and start using Cryptokernel. <code>ckd</code> is a command-line application so you will need to open a terminal window in order to begin.</p>
+<h3 id="linux">Linux</h3>
+<p>The method for accessing the terminal depends on your specific Linux distribution. On Ubuntu Desktop it can be accessed by searching for &ldquo;Terminal&rdquo; in the menu bar. Once you have a terminal open, change directory to the location where you extracted Cryptokernel.</p>
+<p>e.g.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ <span style="color:#008000">cd</span> /home/james/cryptokernel
+</code></pre></div><h3 id="windows">Windows</h3>
+<p>The terminal on Windows is called the command prompt. This can be found from the Start menu or by pressing the windows key and R, then typing <code>cmd</code> at the &ldquo;Run&rdquo; window and pressing okay. From the command prompt you will need to change location to where you extracted Cryptokernel.</p>
+<p>e.g.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cmd" data-lang="cmd">C:<span style="color:#a0a000">\Users\James</span><span style="color:#408080;font-style:italic">&gt; dir C:\Users\James\cryptokernel</span>
+
+C:<span style="color:#a0a000">\Users\James\cryptokernel</span><span style="color:#408080;font-style:italic">&gt;</span>
+</code></pre></div><h3 id="macos">MacOS</h3>
+<p>The terminal in MacOS can be found from Finder in <code>Applications-&gt;Utilities-&gt;Terminal</code>. Once you have a terminal open, change directory to the location where you extracted Cryptokernel.</p>
+<p>e.g.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ <span style="color:#008000">cd</span> /Users/James/cryptokernel
+</code></pre></div><h2 id="a-namerunninga-running-ckd"><!-- raw HTML omitted --><!-- raw HTML omitted --> Running <code>ckd</code></h2>
+<p>The remainder of this guide will continue using the Linux/MacOS convention of starting <code>ckd</code> by typing:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ ./ckd
+</code></pre></div><p>Windows users will instead have to write the following (without the <code>./</code>) to achieve the same thing:</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cmd" data-lang="cmd">C:<span style="color:#a0a000">\Users\James\cryptokernel</span><span style="color:#408080;font-style:italic">&gt; ckd</span>
+</code></pre></div><h3 id="first-run">First run</h3>
+<p>As described above, start <code>ckd</code> in order to create a new K320 wallet. <code>ckd</code> will ask you to choose a password for your wallet.</p>
+<p>e.g.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ ./ckd
+Enter new wallet passphrase <span style="color:#666">(</span>min <span style="color:#666">8</span> chars<span style="color:#666">)</span>: ********
+Confirm passphrase: ********
+Wallet successfully encrypted
+ck daemon started
+</code></pre></div><h3 id="querying-information-about-our-node">Querying information about our node</h3>
+<p>Now open a second terminal window and change directory to the location where you extracted Cryptokernel as in the <a href="#terminal">opening the terminal</a> section above. From there, you can interact with the <code>ckd</code> instance you just started. First off you can use the <code>getinfo</code> command to retrieve the current status of your node.</p>
+<p>e.g.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ ./ckd getinfo
+<span style="color:#666">{</span>
+	<span style="color:#ba2121">&#34;balance&#34;</span> : <span style="color:#ba2121">&#34;0.00000000&#34;</span>,
+	<span style="color:#ba2121">&#34;ck_version&#34;</span> : <span style="color:#ba2121">&#34;0.1.1-alpha&#34;</span>,
+	<span style="color:#ba2121">&#34;connections&#34;</span> : 0,
+	<span style="color:#ba2121">&#34;height&#34;</span> : 1,
+	<span style="color:#ba2121">&#34;mempool&#34;</span> : 
+	<span style="color:#666">{</span>
+		<span style="color:#ba2121">&#34;count&#34;</span> : 0,
+		<span style="color:#ba2121">&#34;size&#34;</span> : <span style="color:#ba2121">&#34;0.000 MB&#34;</span>
+	<span style="color:#666">}</span>,
+	<span style="color:#ba2121">&#34;rpc_version&#34;</span> : <span style="color:#ba2121">&#34;0.0.2&#34;</span>
+<span style="color:#666">}</span>
+</code></pre></div><p>It typically takes a few hours for <code>ckd</code> to syncronise the entire K320 blockchain. The <code>connections</code> field in the <code>getinfo</code> output tells you how many other Cryptokernel peers you are connected to. Once <code>ckd</code> has found some peers, it will begin downloading and verifying blocks and the <code>height</code> field will increase accordingly to indicate how many blocks are in the blockchain.</p>
+<h3 id="querying-information-about-other-nodes">Querying information about other nodes</h3>
+<p>You can use <code>getpeerinfo</code> to retrieve information about the peers you are connected to. Part of this readout tells you the heights of other peers, which can be useful to determine if you are fully syncronised with the K320 network.</p>
+<p>e.g.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ ./ckd getpeerinfo
+<span style="color:#666">{</span>
+	<span style="color:#ba2121">&#34;108.20.219.131&#34;</span> : 
+	<span style="color:#666">{</span>
+		<span style="color:#ba2121">&#34;connectedSince&#34;</span> : 1534358423,
+		<span style="color:#ba2121">&#34;height&#34;</span> : 207062,
+		<span style="color:#ba2121">&#34;incoming&#34;</span> : false,
+		<span style="color:#ba2121">&#34;ping&#34;</span> : 18,
+		<span style="color:#ba2121">&#34;transferDown&#34;</span> : 92082,
+		<span style="color:#ba2121">&#34;transferUp&#34;</span> : 22222,
+		<span style="color:#ba2121">&#34;version&#34;</span> : <span style="color:#ba2121">&#34;0.1.1-alpha&#34;</span>
+	<span style="color:#666">}</span>,
+	<span style="color:#ba2121">&#34;13.58.67.108&#34;</span> : 
+	<span style="color:#666">{</span>
+		<span style="color:#ba2121">&#34;connectedSince&#34;</span> : 1534358426,
+		<span style="color:#ba2121">&#34;height&#34;</span> : 207062,
+		<span style="color:#ba2121">&#34;incoming&#34;</span> : false,
+		<span style="color:#ba2121">&#34;ping&#34;</span> : 44,
+		<span style="color:#ba2121">&#34;transferDown&#34;</span> : 33721,
+		<span style="color:#ba2121">&#34;transferUp&#34;</span> : 23843,
+		<span style="color:#ba2121">&#34;version&#34;</span> : <span style="color:#ba2121">&#34;0.1.1-alpha&#34;</span>
+	<span style="color:#666">}</span>,
+	<span style="color:#ba2121">&#34;159.65.161.209&#34;</span> : 
+	<span style="color:#666">{</span>
+		<span style="color:#ba2121">&#34;connectedSince&#34;</span> : 1534358429,
+		<span style="color:#ba2121">&#34;height&#34;</span> : 207062,
+		<span style="color:#ba2121">&#34;incoming&#34;</span> : false,
+		<span style="color:#ba2121">&#34;ping&#34;</span> : 9,
+		<span style="color:#ba2121">&#34;transferDown&#34;</span> : 25625,
+		<span style="color:#ba2121">&#34;transferUp&#34;</span> : 13736,
+		<span style="color:#ba2121">&#34;version&#34;</span> : <span style="color:#ba2121">&#34;0.1.0-alpha-rc4&#34;</span>
+	<span style="color:#666">}</span>,
+	<span style="color:#ba2121">&#34;18.85.22.252&#34;</span> : 
+	<span style="color:#666">{</span>
+		<span style="color:#ba2121">&#34;connectedSince&#34;</span> : 1534358414,
+		<span style="color:#ba2121">&#34;height&#34;</span> : 207062,
+		<span style="color:#ba2121">&#34;incoming&#34;</span> : false,
+		<span style="color:#ba2121">&#34;ping&#34;</span> : 4,
+		<span style="color:#ba2121">&#34;transferDown&#34;</span> : 31122,
+		<span style="color:#ba2121">&#34;transferUp&#34;</span> : 19799,
+		<span style="color:#ba2121">&#34;version&#34;</span> : <span style="color:#ba2121">&#34;0.1.0-alpha-rc4&#34;</span>
+	<span style="color:#666">}</span>
+<span style="color:#666">}</span>
+</code></pre></div><h3 id="a-namestoppinga-stopping-ckd"><!-- raw HTML omitted --><!-- raw HTML omitted --> Stopping <code>ckd</code></h3>
+<p>You can stop the <code>ckd</code> instance by using <code>stop</code>.</p>
+<p>e.g.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ ./ckd stop
+</code></pre></div><h3 id="running-ckd-in-the-background">Running <code>ckd</code> in the background</h3>
+<p>To start <code>ckd</code> in daemon mode, use the <code>-daemon</code> flag. This will cause <code>ckd</code> to run in the background, allowing you to close the terminal window.</p>
+<p>e.g.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ ./ckd -daemon
+ck daemon started
+~$
+</code></pre></div><h2 id="a-namegen_addressa-retrieving-a-wallet-address"><!-- raw HTML omitted --><!-- raw HTML omitted --> Retrieving a wallet address</h2>
+<p>In order to receive coins from mining or from other users you will need to generate a new wallet address. Cryptokernel stores addresses as labeled accounts with distinct balances to help you easily organise your funds. To create a new account or view the balance and address for an existing account, use the <code>account</code> command and provide an account name of your choosing.</p>
+<p>e.g.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ ./ckd account mining_rewards
+Please enter your wallet passphrase: ********
+<span style="color:#666">{</span>
+	<span style="color:#ba2121">&#34;balance&#34;</span> : <span style="color:#ba2121">&#34;0&#34;</span>,
+	<span style="color:#ba2121">&#34;keys&#34;</span> : 
+	<span style="color:#666">[</span>
+		<span style="color:#666">{</span>
+			<span style="color:#ba2121">&#34;privKey&#34;</span> : 
+			<span style="color:#666">{</span>
+				<span style="color:#ba2121">&#34;cipherText&#34;</span> : <span style="color:#ba2121">&#34;qtWvIRW3E9wHDclGPZ4GTjAolBjVT8Dpe4st8SUzBahv7oE8SpQ9eeUlNtjpRLLZ&#34;</span>,
+				<span style="color:#ba2121">&#34;iv&#34;</span> : <span style="color:#ba2121">&#34;0/GiyAoK3D0OvozHALGK7g==&#34;</span>,
+				<span style="color:#ba2121">&#34;salt&#34;</span> : <span style="color:#ba2121">&#34;MJOLKLDeQWVZpU8TQ0+eruKbov3Ub+gB16KDU5lelD0=&#34;</span>
+			<span style="color:#666">}</span>,
+			<span style="color:#ba2121">&#34;pubKey&#34;</span> : <span style="color:#ba2121">&#34;BDdUhYtSgftZzhzQo1DKZyK4B3GkM8WnaP0IOv9oFmcWxXXGlmeFoguLmHrVSY8/56BxH8Dpz3Lyw7cKw/SjPRM=&#34;</span>
+		<span style="color:#666">}</span>
+	<span style="color:#666">]</span>,
+	<span style="color:#ba2121">&#34;name&#34;</span> : <span style="color:#ba2121">&#34;mining_rewards&#34;</span>
+<span style="color:#666">}</span>
+</code></pre></div><p>The <code>pubKey</code> field shows the address you can give to others such that they can send you coins. Issuing the same command in the future will retreive the same address and display your updated balance if coins are sent to (or from) the address. Also displayed in the <code>privKey</code> field is the AES-256 encrypted representation of the private key needed to send from the address.</p>
+<h2 id="configuring-mining">Configuring mining</h2>
+<p>The easiest way to acquire coins is to mine them. Mining is the means by which new coins are created in K320 and other Proof-of-Work based cryptocurrencies. Mining also helps to secure the network by validating new transactions. Effectively you are voting with your computer&rsquo;s power on the correct state of the system.</p>
+<p>Edit the <code>config.json</code> file which is stored in the same location as the <code>ckd</code> binary with your favourite text editor. Inside that file you will need to set the <code>miner</code> field to <code>true</code> and the <code>pubKey</code> field to an address you generated in the earlier <a href="#gen_address">retrieving a wallet address</a> section.</p>
+<p>e.g.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Json" data-lang="Json"><span style="">.</span><span style="">.</span><span style="">.</span>
+<span style="color:#ba2121">&#34;miner&#34;</span> <span style="">:</span> <span style="color:#008000;font-weight:bold">true</span><span style="">,</span>
+<span style="color:#ba2121">&#34;pubKey&#34;</span> <span style="">:</span> <span style="color:#ba2121">&#34;BDdUhYtSgftZzhzQo1DKZyK4B3GkM8WnaP0IOv9oFmcWxXXGlmeFoguLmHrVSY8/56BxH8Dpz3Lyw7cKw/SjPRM=&#34;</span><span style="">,</span>
+<span style="">.</span><span style="">.</span><span style="">.</span>
+</code></pre></div><p>Now when you restart <code>ckd</code> (see the <a href="#stopping">stopping <code>ckd</code></a> and <a href="#running">running <code>ckd</code></a> sections), it will begin mining K320. Over time you will see the balance of the mining address you chose increasing though it could take several hours before you successfully mine your first coins depending on the speed of your computer and the number of other miners on the network.</p>
+<h2 id="sending-coins">Sending coins</h2>
+<p>Once you have mined some coins you can use the <code>sendtoaddress</code> command to send them to other K320 users. <code>sendtoaddress</code> takes the destination address and amount as arguments and returns the transaction ID if the send was sucessful.</p>
+<p>e.g.</p>
+<div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ ./ckd sendtoaddress BFAxMRX95crygWONzw2vxWPos8OGPdUAX9qyXvzgiapyvmQWDNY1Ao8Z5L9oDdmTS5uJ/2lqAJcftUCkqd0aBYY<span style="color:#666">=</span> <span style="color:#666">50</span>
+Please enter your wallet passphrase: ********
+74770d95b789c2b7551bb62d284509e49a32eef3288c104a72409c097ce515a1
+</code></pre></div><h2 id="next-steps">Next steps</h2>
+<p>Now that you have successfully set up a <code>ckd</code> instance and are on your way to mining some K320 you&rsquo;re ready to explore the rest of what Cryptokernel has to offer. Check out the <code>help</code> command of <code>ckd</code> to see the full list of currently available commands or see the rest of the <a href="/documentation">documentation</a> for more advanced uses of Cryptokernel.</p>
+
+</main>
+
+  <footer>
+  
+  
+  <hr/>
+  <!-- raw HTML omitted -->
+  
+  </footer>
+  </body>
+</html>
+
