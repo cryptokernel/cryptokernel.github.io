@@ -2,12 +2,12 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tags on Cryptokernel</title>
-    <link>https://metalicjames.github.io/cryptokernel_website/tags/</link>
+    <link>https://cryptokernel.org/tags/</link>
     <description>Recent content in Tags on Cryptokernel</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     
-	<atom:link href="https://metalicjames.github.io/cryptokernel_website/tags/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://cryptokernel.org/tags/index.xml" rel="self" type="application/rss+xml" />
     
     
   </channel>
