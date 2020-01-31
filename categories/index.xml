@@ -2,12 +2,12 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Categories on Cryptokernel</title>
-    <link>http://cryptokernel.org/categories/</link>
+    <link>https://metalicjames.github.io/cryptokernel_website/categories/</link>
     <description>Recent content in Categories on Cryptokernel</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     
-	<atom:link href="http://cryptokernel.org/categories/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://metalicjames.github.io/cryptokernel_website/categories/index.xml" rel="self" type="application/rss+xml" />
     
     
   </channel>
