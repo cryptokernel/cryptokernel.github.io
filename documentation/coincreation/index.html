@@ -125,16 +125,16 @@
 	<span style="color:#ba2121">&#34;</span><span style="color:#ba2121">miner</span><span style="color:#ba2121">&#34;</span>: <span style="color:#008000;font-weight:bold">false</span>
 }
 </code></pre></div><p><strong>Coins</strong></p>
-<p>The <strong><code>coins</code></strong> array is a list of objects that represent a single coin. Cryptokernel can support many coins running in a single instance of ckd, so there&rsquo;s limit on how many coin definitions we can include in this array. <!-- raw HTML omitted -->
-<strong><code>blockdb</code></strong> is a path to the folder that contains the blockchain database. <!-- raw HTML omitted -->
-<strong><code>consensus</code></strong> is an object that contains information about what consensus algorithm our coin will implement. If you&rsquo;re wondering what a consensus algorithm is you can check out explanations of the most popular ones: <a href="https://en.bitcoin.it/wiki/Proof_of_work">Proof of Work</a> and <a href="https://github.com/ethereum/wiki/wiki/Proof-of-Stake-FAQs">Proof of Stake</a>. <!-- raw HTML omitted -->
-<strong><code>blocktime</code></strong> indicates about how often a new block should be found in seconds, so 2.5 minutes on average for K320. <!-- raw HTML omitted -->
-<strong><code>type</code></strong> indicates which consensus algorithm our coin will use. Currently, Cryptokernel only supports the <code>kgw_lyrarev2</code>, but in the future we could choose between PoW, PoS, and many other algorithms right here in the config file. <!-- raw HTML omitted -->
-<strong><code>genesisblock</code></strong> is the name of the file that contains the genesis block definition, in our case this will be <code>genesisblockDoc.json</code>. <code>name</code> is the name of our new coin. <!-- raw HTML omitted -->
-<strong><code>peerdb</code></strong> is a path to the folder that contains our peers that we try to connect to and sync our blockchains with. <!-- raw HTML omitted -->
-<strong><code>port</code></strong> is the port number that Cryptokernel uses to contact other nodes. We&rsquo;ll have to change this if we&rsquo;re running multiple coins. <!-- raw HTML omitted -->
-<strong><code>rpcport</code></strong> is the port that ckd uses when making rpc calls like <code>getinfo</code> and <code>sendtoaddress</code>. These are just api calls that make interacting with ckd easier. <!-- raw HTML omitted -->
-<strong><code>subsidy</code></strong> is a function that returns a block reward given a block height. Currently the only subsidy function that is available is k320. For a description of k320 you can look <a href="https://github.com/mit-dci/CryptoKernel">here</a> and for the definition in code you can go <a href="https://github.com/mit-dci/CryptoKernel/blob/master/src/client/multicoin.cpp#L80">here</a>. <!-- raw HTML omitted -->
+<p>The <strong><code>coins</code></strong> array is a list of objects that represent a single coin. Cryptokernel can support many coins running in a single instance of ckd, so there&rsquo;s limit on how many coin definitions we can include in this array. <br>
+<strong><code>blockdb</code></strong> is a path to the folder that contains the blockchain database. <br>
+<strong><code>consensus</code></strong> is an object that contains information about what consensus algorithm our coin will implement. If you&rsquo;re wondering what a consensus algorithm is you can check out explanations of the most popular ones: <a href="https://en.bitcoin.it/wiki/Proof_of_work">Proof of Work</a> and <a href="https://github.com/ethereum/wiki/wiki/Proof-of-Stake-FAQs">Proof of Stake</a>. <br>
+<strong><code>blocktime</code></strong> indicates about how often a new block should be found in seconds, so 2.5 minutes on average for K320. <br>
+<strong><code>type</code></strong> indicates which consensus algorithm our coin will use. Currently, Cryptokernel only supports the <code>kgw_lyrarev2</code>, but in the future we could choose between PoW, PoS, and many other algorithms right here in the config file. <br>
+<strong><code>genesisblock</code></strong> is the name of the file that contains the genesis block definition, in our case this will be <code>genesisblockDoc.json</code>. <code>name</code> is the name of our new coin. <br>
+<strong><code>peerdb</code></strong> is a path to the folder that contains our peers that we try to connect to and sync our blockchains with. <br>
+<strong><code>port</code></strong> is the port number that Cryptokernel uses to contact other nodes. We&rsquo;ll have to change this if we&rsquo;re running multiple coins. <br>
+<strong><code>rpcport</code></strong> is the port that ckd uses when making rpc calls like <code>getinfo</code> and <code>sendtoaddress</code>. These are just api calls that make interacting with ckd easier. <br>
+<strong><code>subsidy</code></strong> is a function that returns a block reward given a block height. Currently the only subsidy function that is available is k320. For a description of k320 you can look <a href="https://github.com/mit-dci/CryptoKernel">here</a> and for the definition in code you can go <a href="https://github.com/mit-dci/CryptoKernel/blob/master/src/client/multicoin.cpp#L80">here</a>. <br>
 <strong><code>walletdb</code></strong> is a path to the folder that contains all of the wallet information for this node and coin.</p>
 <p><strong>New Configuration</strong></p>
 <div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Lua" data-lang="Lua">{
@@ -319,7 +319,7 @@ Thu Jan <span style="color:#666">31</span> 17:26:39 <span style="color:#666">201
   
   
   <hr/>
-  <!-- raw HTML omitted -->
+  [MIT DCI](https://dci.mit.edu) | [GitHub](https://github.com/mit-dci/cryptokernel)</p><img src="/images/dci.png" style="max-width:19%;min-width:50px;float:left;margin-bottom:20px;" alt="DCI logo" /><img src="/images/media_lab.png" style="max-width:25%;min-width:50px;float:right;" alt="MIT Media Lab logo" />
   
   </footer>
   </body>

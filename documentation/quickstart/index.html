@@ -44,7 +44,7 @@
 <p>This quickstart guide will help you to run a Cryptokernel node with the reference coin K320. First we will download and install the Cryptokernel software, synchronise with the blockchain, create a new K320 receiving address and configure mining in order to acquire some coins. You can use these coins to further explore Cryptokernel.</p>
 <h2 id="download-and-install">Download and install</h2>
 <p>Visit the <a href="/downloads">downloads</a> page in order to download the latest Cryptokernel release for your platform. At present 64-bit Windows, MacOS and Linux binaries are provided. It is also possible to build Cryptokernel from the source code. Once you have downloaded the archive for your platform, extract its contents to a location of your choice.</p>
-<h2 id="a-nameterminalaopening-the-terminal"><!-- raw HTML omitted --><!-- raw HTML omitted -->Opening the terminal</h2>
+<h2 id="a-nameterminalaopening-the-terminal"><a name="terminal"></a>Opening the terminal</h2>
 <p><code>ckd</code> is the reference Cryptokernel daemon that contains everything you need to run a K320 node and start using Cryptokernel. <code>ckd</code> is a command-line application so you will need to open a terminal window in order to begin.</p>
 <h3 id="linux">Linux</h3>
 <p>The method for accessing the terminal depends on your specific Linux distribution. On Ubuntu Desktop it can be accessed by searching for &ldquo;Terminal&rdquo; in the menu bar. Once you have a terminal open, change directory to the location where you extracted Cryptokernel.</p>
@@ -60,7 +60,7 @@ C:<span style="color:#a0a000">\Users\James\cryptokernel</span><span style="color
 <p>The terminal in MacOS can be found from Finder in <code>Applications-&gt;Utilities-&gt;Terminal</code>. Once you have a terminal open, change directory to the location where you extracted Cryptokernel.</p>
 <p>e.g.</p>
 <div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ <span style="color:#008000">cd</span> /Users/James/cryptokernel
-</code></pre></div><h2 id="a-namerunninga-running-ckd"><!-- raw HTML omitted --><!-- raw HTML omitted --> Running <code>ckd</code></h2>
+</code></pre></div><h2 id="a-namerunninga-running-ckd"><a name="running"></a> Running <code>ckd</code></h2>
 <p>The remainder of this guide will continue using the Linux/MacOS convention of starting <code>ckd</code> by typing:</p>
 <div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ ./ckd
 </code></pre></div><p>Windows users will instead have to write the following (without the <code>./</code>) to achieve the same thing:</p>
@@ -136,7 +136,7 @@ ck daemon started
 		<span style="color:#ba2121">&#34;version&#34;</span> : <span style="color:#ba2121">&#34;0.1.0-alpha-rc4&#34;</span>
 	<span style="color:#666">}</span>
 <span style="color:#666">}</span>
-</code></pre></div><h3 id="a-namestoppinga-stopping-ckd"><!-- raw HTML omitted --><!-- raw HTML omitted --> Stopping <code>ckd</code></h3>
+</code></pre></div><h3 id="a-namestoppinga-stopping-ckd"><a name="stopping"></a> Stopping <code>ckd</code></h3>
 <p>You can stop the <code>ckd</code> instance by using <code>stop</code>.</p>
 <p>e.g.</p>
 <div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ ./ckd stop
@@ -146,7 +146,7 @@ ck daemon started
 <div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ ./ckd -daemon
 ck daemon started
 ~$
-</code></pre></div><h2 id="a-namegen_addressa-retrieving-a-wallet-address"><!-- raw HTML omitted --><!-- raw HTML omitted --> Retrieving a wallet address</h2>
+</code></pre></div><h2 id="a-namegen_addressa-retrieving-a-wallet-address"><a name="gen_address"></a> Retrieving a wallet address</h2>
 <p>In order to receive coins from mining or from other users you will need to generate a new wallet address. Cryptokernel stores addresses as labeled accounts with distinct balances to help you easily organise your funds. To create a new account or view the balance and address for an existing account, use the <code>account</code> command and provide an account name of your choosing.</p>
 <p>e.g.</p>
 <div class="highlight"><pre style=";-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Shell" data-lang="Shell">~$ ./ckd account mining_rewards
@@ -192,7 +192,7 @@ Please enter your wallet passphrase: ********
   
   
   <hr/>
-  <!-- raw HTML omitted -->
+  [MIT DCI](https://dci.mit.edu) | [GitHub](https://github.com/mit-dci/cryptokernel)</p><img src="/images/dci.png" style="max-width:19%;min-width:50px;float:left;margin-bottom:20px;" alt="DCI logo" /><img src="/images/media_lab.png" style="max-width:25%;min-width:50px;float:right;" alt="MIT Media Lab logo" />
   
   </footer>
   </body>
